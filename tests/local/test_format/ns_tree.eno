@@ -58,3 +58,15 @@
   (:require-macros
    [a.macros :refer :all]))
 --Expected
+
+# comment after a form on the same line as the ns close stays with that form
+
+--Input
+(ns a (:require [b])) (def x) ;; c
+--Input
+
+--Expected
+(ns a
+  (:require
+   [b])) (def x) ;; c
+--Expected

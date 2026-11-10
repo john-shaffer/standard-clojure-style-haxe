@@ -250,3 +250,20 @@
   ]
 }
 --Expected
+
+# comment after a later form on the ns close line is not part of the ns
+
+--Input
+(ns a (:require [b])) (def x) ;; c
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b"
+    }
+  ]
+}
+--Expected
