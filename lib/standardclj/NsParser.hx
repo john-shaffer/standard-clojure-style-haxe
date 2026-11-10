@@ -642,6 +642,10 @@ class NsParser {
 		}
 	}
 
+	static function symbolExpected(option:String):haxe.Exception {
+		return new haxe.Exception(':require $option must be followed by a symbol.');
+	}
+
 	// :as, :refer and so on, after the symbol of a libspec
 	function requireOptions(ss:Array<Slot>, i:Int, req:Dynamic):Void {
 		while ((i = skipTrivia(ss, i)) < ss.length) {
@@ -655,10 +659,18 @@ class NsParser {
 					continue;
 			}
 			i = skipTrivia(ss, i);
-			if (i >= ss.length)
+			final needsSymbol = option == ":as" || option == ":as-alias" || option == ":default";
+			if (i >= ss.length) {
+				if (needsSymbol)
+					throw symbolExpected(option);
 				return;
+			}
 			final value = ss[i++];
 			final v = value.node;
+			if (needsSymbol && (!isToken(v) || isKeyword(v)))
+				throw symbolExpected(option);
+			if (option == ":include-macros" && !isBoolean(v))
+				throw new haxe.Exception(":require :include-macros must be followed by true or false.");
 			switch option {
 				case ":as" if (isToken(v)):
 					req.as = v.text;

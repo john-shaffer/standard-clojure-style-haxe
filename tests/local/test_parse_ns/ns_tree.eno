@@ -267,3 +267,42 @@
   ]
 }
 --Expected
+
+# require :as must be followed by a symbol
+
+--Input
+(ns a (:require [b :as :refer c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :as must be followed by a symbol."
+}
+--Expected
+
+# require :as at the end of a libspec is an error
+
+--Input
+(ns a (:require [b :as]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :as must be followed by a symbol."
+}
+--Expected
+
+# require :include-macros must be followed by a boolean
+
+--Input
+(ns a (:require [b :include-macros yes]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :include-macros must be followed by true or false."
+}
+--Expected
