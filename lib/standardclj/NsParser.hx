@@ -261,8 +261,8 @@ class NsParser {
 		}
 	}
 
-	/** Pairs up the tokens inside `form`, as in `{print core-print, get g}`. **/
-	function eachPair(form:Node, platform:Null<String>, f:Node->Node->Null<String>->Void):Void {
+	/** Pairs up the tokens inside `form`, as in `{print core-print, get g}`. Returns false if a token is left over. **/
+	function eachPair(form:Node, platform:Null<String>, f:Node->Node->Null<String>->Void):Bool {
 		var from:Null<Node> = null;
 		eachToken(form, platform, (n, p) -> {
 			if (from == null) {
@@ -272,6 +272,7 @@ class NsParser {
 				from = null;
 			}
 		});
+		return from == null;
 	}
 
 	// -------------------------------------------------------------------------
@@ -634,12 +635,12 @@ class NsParser {
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
 			if (!isToken(key))
-				continue;
+				throw new haxe.Exception(":require options must be keywords.");
 			final option = key.text;
 			switch option {
 				case ":as" | ":as-alias" | ":default" | ":include-macros" | ":refer" | ":refer-macros" | ":rename" | ":exclude":
 				default:
-					continue;
+					throw new haxe.Exception(':require $option is not a supported option.');
 			}
 			i = skipTrivia(ss, i);
 			final needsSymbol = option == ":as" || option == ":as-alias" || option == ":default";
@@ -654,6 +655,10 @@ class NsParser {
 				throw symbolExpected(option);
 			if (option == ":include-macros" && !isBoolean(v))
 				throw new haxe.Exception(":require :include-macros must be followed by true or false.");
+			if (option == ":refer" && !isCollection(v) && !(isToken(v) && v.text == ":all"))
+				throw new haxe.Exception(":require :refer must be followed by :all or a collection.");
+			if ((option == ":exclude" || option == ":refer-macros" || option == ":rename") && !isCollection(v))
+				throw new haxe.Exception(':require $option must be followed by a collection.');
 			switch option {
 				case ":as" if (isToken(v)):
 					req.alias = v.text;
@@ -678,7 +683,8 @@ class NsParser {
 						else if (isToken(s.node))
 							lazy(req.referMacros, a -> req.referMacros = a).push(s.node.text);
 				case ":rename":
-					eachPair(v, value.platform, (from, to, p) -> lazy(req.rename, a -> req.rename = a).push(new Rename(from.text, to.text, p)));
+					if (!eachPair(v, value.platform, (from, to, p) -> lazy(req.rename, a -> req.rename = a).push(new Rename(from.text, to.text, p))))
+						throw new haxe.Exception(":require :rename must be followed by pairs of symbols.");
 				case ":exclude":
 					final exclude:Array<Symbol> = [];
 					req.exclude = exclude;
@@ -798,8 +804,10 @@ class NsParser {
 
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
-			if (!isToken(key) || (key.text != ":as" && key.text != ":refer" && key.text != ":rename"))
-				continue;
+			if (!isToken(key))
+				throw new haxe.Exception(":require-macros options must be keywords.");
+			if (key.text != ":as" && key.text != ":refer" && key.text != ":rename")
+				throw new haxe.Exception(':require-macros ${key.text} is not a supported option.');
 			i = skipTrivia(ss, i);
 			if (i >= ss.length)
 				return;

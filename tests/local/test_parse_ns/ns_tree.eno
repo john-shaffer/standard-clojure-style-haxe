@@ -331,3 +331,81 @@
   ]
 }
 --Expected
+
+# require unknown option is an error
+
+--Input
+(ns a (:require [b :foo bar]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :foo is not a supported option."
+}
+--Expected
+
+# require option that is not a keyword is an error
+
+--Input
+(ns a (:require [b :as c "d"]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require options must be keywords."
+}
+--Expected
+
+# require :refer must be followed by :all or a collection
+
+--Input
+(ns a (:require [b :refer c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :refer must be followed by :all or a collection."
+}
+--Expected
+
+# require :rename must be followed by a collection
+
+--Input
+(ns a (:require [b :rename c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :rename must be followed by a collection."
+}
+--Expected
+
+# require :rename needs pairs of symbols
+
+--Input
+(ns a (:require [b :rename {c d, e}]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :rename must be followed by pairs of symbols."
+}
+--Expected
+
+# require-macros unknown option is an error
+
+--Input
+(ns a (:require-macros [b :foo bar]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require-macros :foo is not a supported option."
+}
+--Expected
