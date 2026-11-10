@@ -1072,6 +1072,20 @@ class NsFormatter {
 				if (isStringWithChars(c))
 					commentAfterGenClass = c;
 			}
+
+			// then the forms we do not know, as they were written
+			for (other in arr(get(genClass, "other"))) {
+				if (isStringWithChars(commentAfterGenClass)) {
+					out += " " + commentAfterGenClass;
+					commentAfterGenClass = null;
+				}
+				out += "\n";
+				out = printCommentsAbove(out, get(other, "commentsAbove"), valueIndentation);
+				out += valueIndentation + str(get(other, "text"));
+				final c:Dynamic = get(other, "commentAfter");
+				if (isStringWithChars(c))
+					commentAfterGenClass = c;
+			}
 		}
 
 		final hasComment = isStringWithChars(commentAfterGenClass);

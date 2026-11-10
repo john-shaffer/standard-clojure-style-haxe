@@ -1,0 +1,37 @@
+# gen-class unknown keys are printed by shape after the known keys
+
+--Input
+(ns foo
+  (:gen-class :foo [x
+                    y] :name foo.Bar :bar baz :main [a] :baz {a b}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :foo [x y]
+   :bar baz
+   :main [a]
+   :baz {a b}))
+--Expected
+
+# gen-class unknown keys keep their comments
+
+--Input
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   ;; about foo
+   :foo [x y] ;; after foo
+   :bar baz))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   ;; about foo
+   :foo [x y] ;; after foo
+   :bar baz))
+--Expected

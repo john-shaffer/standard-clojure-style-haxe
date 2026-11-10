@@ -866,8 +866,10 @@ class NsParser {
 		var i = sec.next;
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
-			if (!GenClass.isKeyword(key))
+			if (!GenClass.isKeyword(key)) {
+				i = genClassOther(genClass, key, ss, i);
 				continue;
+			}
 			genClass.isEmpty = false;
 			final name = key.text.substr(1);
 			final field:Dynamic = {};
@@ -881,10 +883,50 @@ class NsParser {
 				return;
 			final value = ss[i++];
 			genClassValue(name, field, value);
-			// a comment after the value belongs to the key
-			if (Reflect.hasField(field, "value"))
-				target = {from: line(lastDescendant(value.node)), to: line(lastDescendant(value.node)), set: c -> field.commentAfter = c};
+			if (Reflect.hasField(field, "value")) {
+				// a comment after the value belongs to the key
+				final end = line(lastDescendant(value.node));
+				target = {from: end, to: end, set: c -> field.commentAfter = c};
+			} else {
+				// a kind of value this key does not take is kept as it is written
+				Reflect.deleteField(genClass, name);
+				addOther(genClass, key, value.node, field.commentsAbove);
+			}
 		}
+	}
+
+	// a key we do not know, or a form that is not a key: kept as it is written
+	function genClassOther(genClass:Dynamic, first:Node, ss:Array<Slot>, i:Int):Int {
+		genClass.isEmpty = false;
+		final above = takePending();
+		var value:Null<Node> = null;
+		if (isToken(first) && isKeyword(first)) {
+			final next = skipTrivia(ss, i);
+			if (next < ss.length && !(isToken(ss[next].node) && isKeyword(ss[next].node))) {
+				value = ss[next].node;
+				i = next + 1;
+			}
+		}
+		addOther(genClass, first, value, above);
+		return i;
+	}
+
+	function addOther(genClass:Dynamic, key:Node, value:Null<Node>, above:Null<Array<String>>):Void {
+		final item:Dynamic = {text: shape(key) + (value == null ? "" : " " + shape(value))};
+		if (above != null)
+			item.commentsAbove = above;
+		arrayField(genClass, "other").push(item);
+		final end = line(lastDescendant(value == null ? key : value));
+		target = {from: end, to: end, set: c -> item.commentAfter = c};
+	}
+
+	/** A form on a single line, with its elements separated by spaces. **/
+	static function shape(n:Node):String {
+		if (!isCollection(n))
+			return textOf(n);
+		final last = n.children[n.children.length - 1];
+		final close = last.name == ".close" ? last.text : "";
+		return n.children[0].text + bodyOf(n).filter(c -> !isGap(c)).map(shape).join(" ") + close;
 	}
 
 	function genClassValue(name:String, field:Dynamic, value:Slot):Void {
