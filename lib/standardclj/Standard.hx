@@ -15,7 +15,8 @@ class Standard {
 	public static function format(text:String):FormatResult {
 		// replace any CRLF with LF before we do anything
 		final input = FormatUtil.crlfToLf(text);
-		final nodes = Parser.parse(input).flatten();
+		final root = Parser.parse(input);
+		final nodes = root.flatten();
 		if (NsParser.lookForIgnoreFile(nodes))
 			return Success(input, true);
 		final parsedNs:Ns = try {
@@ -23,7 +24,7 @@ class Standard {
 		} catch (e:haxe.Exception) {
 			return Failure(e.message);
 		}
-		return NodesFormatter.format(nodes, parsedNs);
+		return NodesFormatter.format(root, parsedNs);
 	}
 
 	/** Parses Clojure source text into a syntax tree. Never fails. **/

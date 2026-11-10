@@ -1,15 +1,14 @@
 package standardclj;
 
 /**
-	Predicates and accessors over flat lists of nodes (see `Node.flatten`).
-	All predicates accept null and return false for it.
+	Predicates and accessors over nodes. All predicates accept null and return false for it.
 **/
 class NodeUtil {
 	static inline function isText(n:Null<Node>, text:String):Bool {
 		return n != null && n.text == text;
 	}
 
-	static inline function isOpen(n:Null<Node>, text:String):Bool {
+	public static inline function isOpen(n:Null<Node>, text:String):Bool {
 		return n != null && n.name == ".open" && n.text == text;
 	}
 
@@ -62,10 +61,6 @@ class NodeUtil {
 	}
 
 	/** The `#_` marker inside a `discard` node. **/
-	public static function isDiscardMarker(n:Null<Node>):Bool {
-		return n != null && n.name == "marker" && n.text == "#_";
-	}
-
 	public static function isStandardCljIgnoreKeyword(n:Null<Node>):Bool {
 		return n != null && n.name == "token" && n.text == ":standard-clj/ignore";
 	}
@@ -122,14 +117,6 @@ class NodeUtil {
 
 	public static function isMetaMarker(n:Null<Node>):Bool {
 		return n != null && n.name == ".marker" && (n.text == "^" || n.text == "#^");
-	}
-
-	public static function isStringOpener(n:Null<Node>):Bool {
-		return isOpen(n, "\"") || isOpen(n, "#?\"");
-	}
-
-	public static function isStringCloser(n:Null<Node>):Bool {
-		return n != null && n.name == ".close" && n.text == "\"";
 	}
 
 	// -------------------------------------------------------------------------
