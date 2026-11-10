@@ -13,10 +13,6 @@ class GenClass {
 		return node != null && node.text != null && keywords.indexOf(node.text) >= 0;
 	}
 
-	public static function isNode(node:Null<Node>):Bool {
-		return node != null && node.text == ":gen-class";
-	}
-
 	// keys whose value is a symbol or string
 	public static function isNameKey(key:Null<String>):Bool {
 		return switch key {

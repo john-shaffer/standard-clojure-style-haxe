@@ -22,83 +22,19 @@ class NodeUtil {
 		return hasText(n) && n.text.charAt(0) != " ";
 	}
 
-	public static function hasTextAndNotWhitespace(n:Null<Node>):Bool {
-		return hasText(n) && !isWhitespace(n);
-	}
-
 	// -------------------------------------------------------------------------
-	// ns keywords. Most also match the bare symbol, as in `(ns foo (require x))`.
+	// Tokens
 
 	public static function isNs(n:Null<Node>):Bool {
 		return n != null && n.name == "token" && n.text == "ns";
-	}
-
-	public static function isUse(n:Null<Node>):Bool {
-		return isText(n, ":use") || isText(n, "use");
-	}
-
-	public static function isRequire(n:Null<Node>):Bool {
-		return isText(n, ":require") || isText(n, "require");
-	}
-
-	public static function isRequireMacrosKeyword(n:Null<Node>):Bool {
-		return isText(n, ":require-macros");
-	}
-
-	public static function isReferClojure(n:Null<Node>):Bool {
-		return isText(n, ":refer-clojure") || isText(n, "refer-clojure");
-	}
-
-	public static function isExcludeKeyword(n:Null<Node>):Bool {
-		return isText(n, ":exclude");
-	}
-
-	public static function isOnlyKeyword(n:Null<Node>):Bool {
-		return isText(n, ":only");
-	}
-
-	public static function isRenameKeyword(n:Null<Node>):Bool {
-		return isText(n, ":rename");
-	}
-
-	public static function isAsKeyword(n:Null<Node>):Bool {
-		return isText(n, ":as");
-	}
-
-	public static function isAsAliasKeyword(n:Null<Node>):Bool {
-		return isText(n, ":as-alias");
-	}
-
-	public static function isReferKeyword(n:Null<Node>):Bool {
-		return isText(n, ":refer");
-	}
-
-	public static function isDefaultKeyword(n:Null<Node>):Bool {
-		return isText(n, ":default");
-	}
-
-	public static function isReferMacrosKeyword(n:Null<Node>):Bool {
-		return isText(n, ":refer-macros");
-	}
-
-	public static function isIncludeMacros(n:Null<Node>):Bool {
-		return isText(n, ":include-macros");
 	}
 
 	public static function isBoolean(n:Null<Node>):Bool {
 		return isText(n, "true") || isText(n, "false");
 	}
 
-	public static function isAll(n:Null<Node>):Bool {
-		return isText(n, ":all");
-	}
-
 	public static function isKeyword(n:Null<Node>):Bool {
 		return n != null && n.text != null && StringTools.startsWith(n.text, ":");
-	}
-
-	public static function isImport(n:Null<Node>):Bool {
-		return isText(n, ":import") || isText(n, "import");
 	}
 
 	// -------------------------------------------------------------------------

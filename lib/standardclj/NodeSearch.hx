@@ -27,16 +27,9 @@ class NodeSearch {
 				break;
 			if (isComment(child))
 				out.push(child.text);
+
 		}
 		return out;
-	}
-
-	/** The `.body` of a `meta` node, or null. **/
-	public static function metaBody(meta:Node):Null<Node> {
-		for (child in meta.children)
-			if (child.name == ".body")
-				return child;
-		return null;
 	}
 
 	/**
