@@ -43,6 +43,8 @@ class Main {
 					}
 			}
 		}
+		for (e in FormatSuite.extraChecks(roots))
+			failed.push('test_format extra checks\n$e');
 		for (f in failed)
 			Sys.println('FAIL $f\n');
 		Sys.println('${passed} passed, ${failed.length} failed');
