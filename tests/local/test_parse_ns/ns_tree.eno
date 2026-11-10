@@ -227,3 +227,26 @@
   ]
 }
 --Expected
+
+# an own-line discard and the comment after it travel together in :import
+
+--Input
+(ns foo
+  (:import
+   (java.util UUID)
+   #_x ;; about Date
+   (java.util Date)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "imports": [
+    {
+      "package": "java.util",
+      "classes": ["Date", "UUID"],
+      "commentsAbove": ["#_x ;; about Date"]
+    }
+  ]
+}
+--Expected

@@ -174,7 +174,6 @@ class NsParser {
 	var lastCommentLine = -1;
 	var nsEndLine = -1;
 	var afterNsForm = false;
-	var insideRequire = false;
 
 	function new(nodes:Array<Node>) {
 		root = nodes.length > 0 ? nodes[0] : null;
@@ -325,7 +324,7 @@ class NsParser {
 		}
 
 		// a comment after a discard that starts its line goes with the discard
-		if (!isDiscard && insideRequire && pendingDiscardLine == l && pending.length > 0) {
+		if (!isDiscard && pendingDiscardLine == l && pending.length > 0) {
 			pending[pending.length - 1] += " " + text;
 			pendingDiscardLine = -1;
 			return;
@@ -533,7 +532,6 @@ class NsParser {
 		if (above != null)
 			result.requireCommentsAbove = above;
 		targetLine(sec.head, c -> result.requireCommentAfter = c);
-		insideRequire = true;
 
 		var i = sec.next;
 		while ((i = skipTrivia(ss, i)) < ss.length) {
@@ -548,7 +546,6 @@ class NsParser {
 				libspec(form, s.platform);
 			}
 		}
-		insideRequire = false;
 	}
 
 	/** Collects the metadata of a `meta` node for the next libspec and returns the form it is on. **/
