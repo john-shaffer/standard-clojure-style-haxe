@@ -8,90 +8,6 @@ import standardclj.NodeUtil.*;
 	absent fields are really absent.
 **/
 class NsParser {
-	// -------------------------------------------------------------------------
-	// Sorting
-
-	static function cmpStr(a:String, b:String):Int {
-		return a > b ? 1 : a < b ? -1 : 0;
-	}
-
-	// NOTE: a missing platform compares equal to any platform, as upstream
-	static function compareSymbolsThenPlatform(a:Dynamic, b:Dynamic):Int {
-		final c = cmpStr(a.symbol, b.symbol);
-		if (c != 0)
-			return c;
-		if (a.platform == null || b.platform == null)
-			return 0;
-		return cmpStr(a.platform, b.platform);
-	}
-
-	static function compareFromSymbol(a:Dynamic, b:Dynamic):Int {
-		return cmpStr(a.fromSymbol, b.fromSymbol);
-	}
-
-	static function compareImports(a:Dynamic, b:Dynamic):Int {
-		return cmpStr(Reflect.field(a, "package"), Reflect.field(b, "package"));
-	}
-
-	/**
-		Sorts in place like V8's Array.prototype.sort for short arrays (a run
-		detection followed by binary insertion), so that results are the same
-		even for comparators that are not transitive.
-	**/
-	static function sortArray<T>(a:Array<T>, cmp:T->T->Int):Void {
-		final n = a.length;
-		if (n < 2)
-			return;
-		var runLength = 2;
-		if (n > 2) {
-			final descending = cmp(a[1], a[0]) < 0;
-			var previous = a[1];
-			var idx = 2;
-			while (idx < n) {
-				final order = cmp(a[idx], previous);
-				if (descending ? order >= 0 : order < 0)
-					break;
-				previous = a[idx];
-				runLength++;
-				idx++;
-			}
-			if (descending)
-				reverseRange(a, 0, runLength);
-		} else if (cmp(a[1], a[0]) < 0) {
-			reverseRange(a, 0, 2);
-		}
-		for (start in runLength...n) {
-			var left = 0;
-			var right = start;
-			final pivot = a[start];
-			while (left < right) {
-				final mid = left + ((right - left) >> 1);
-				if (cmp(pivot, a[mid]) < 0)
-					right = mid;
-				else
-					left = mid + 1;
-			}
-			var p = start;
-			while (p > left) {
-				a[p] = a[p - 1];
-				p--;
-			}
-			a[left] = pivot;
-		}
-	}
-
-	static function reverseRange<T>(a:Array<T>, from:Int, to:Int):Void {
-		var lo = from;
-		var hi = to - 1;
-		while (lo < hi) {
-			final t = a[lo];
-			a[lo] = a[hi];
-			a[hi] = t;
-			lo++;
-			hi--;
-		}
-	}
-
 	static inline function isArray(x:Dynamic):Bool {
 		return Std.isOfType(x, Array);
 	}
@@ -99,7 +15,7 @@ class NsParser {
 	static inline function sortField(obj:Dynamic, field:String, cmp:Dynamic->Dynamic->Int):Void {
 		final arr:Dynamic = Reflect.field(obj, field);
 		if (isArray(arr))
-			sortArray(cast(arr, Array<Dynamic>), cmp);
+			NsSort.sortArray(cast(arr, Array<Dynamic>), cmp);
 	}
 
 	/** Splits a single-symbol :import like "java.util.Date" into its package and class name. **/
@@ -113,28 +29,28 @@ class NsParser {
 	static function sortNsResult(result:Dynamic, importsObj:Null<Map<String, Dynamic>>, importKeys:Array<String>, prefixListComments:Map<Int, Dynamic>):Dynamic {
 		final referClojure:Dynamic = result.referClojure;
 		if (referClojure != null) {
-			sortField(referClojure, "exclude", compareSymbolsThenPlatform);
-			sortField(referClojure, "only", compareSymbolsThenPlatform);
-			sortField(referClojure, "rename", compareFromSymbol);
+			sortField(referClojure, "exclude", NsSort.compareSymbolsThenPlatform);
+			sortField(referClojure, "only", NsSort.compareSymbolsThenPlatform);
+			sortField(referClojure, "rename", NsSort.compareFromSymbol);
 		}
 
 		final genClass:Dynamic = result.genClass;
 		if (genClass != null) {
 			final implementsKey:Dynamic = Reflect.field(genClass, "implements");
 			if (implementsKey != null)
-				sortField(implementsKey, "value", compareSymbolsThenPlatform);
+				sortField(implementsKey, "value", NsSort.compareSymbolsThenPlatform);
 		}
 
 		if (isArray(result.requireMacros)) {
 			final requireMacros:Array<Dynamic> = result.requireMacros;
-			sortArray(requireMacros, compareSymbolsThenPlatform);
+			NsSort.sortArray(requireMacros, NsSort.compareSymbolsThenPlatform);
 			for (rm in requireMacros)
-				sortField(rm, "refer", compareSymbolsThenPlatform);
+				sortField(rm, "refer", NsSort.compareSymbolsThenPlatform);
 		}
 
 		if (isArray(result.requires)) {
 			final requires:Array<Dynamic> = result.requires;
-			sortArray(requires, compareSymbolsThenPlatform);
+			NsSort.sortArray(requires, NsSort.compareSymbolsThenPlatform);
 
 			for (req in requires) {
 				// attach prefix list comments to the first require with the same id (if possible)
@@ -151,9 +67,9 @@ class NsParser {
 					Reflect.deleteField(req, "prefixListId");
 				}
 
-				sortField(req, "refer", compareSymbolsThenPlatform);
-				sortField(req, "exclude", compareSymbolsThenPlatform);
-				sortField(req, "rename", compareFromSymbol);
+				sortField(req, "refer", NsSort.compareSymbolsThenPlatform);
+				sortField(req, "exclude", NsSort.compareSymbolsThenPlatform);
+				sortField(req, "rename", NsSort.compareFromSymbol);
 			}
 		}
 
@@ -165,7 +81,7 @@ class NsParser {
 			for (packageName in importKeys) {
 				final obj:Dynamic = importsObj.get(packageName);
 				final sortedClasses:Array<String> = obj.classes;
-				sortArray(sortedClasses, cmpStr);
+				NsSort.sortArray(sortedClasses, NsSort.cmpStr);
 
 				// classes in the default package are printed as bare symbols,
 				// so each one becomes its own import entry
@@ -197,7 +113,7 @@ class NsParser {
 				}
 			}
 
-			sortArray(imports, compareImports);
+			NsSort.sortArray(imports, NsSort.compareImports);
 		}
 
 		// merge nsMetadata keys
