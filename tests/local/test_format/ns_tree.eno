@@ -26,3 +26,22 @@
 (ns foo
   (:refer-clojure :exclude [assoc get])) ;; after ns
 --Expected
+
+# a discard between metadata and a libspec is kept above the libspec
+
+--Input
+(ns foo
+  (:require
+   ^:no-doc #_disc
+   [zzz.core :as z]
+   [aaa.core]))
+--Input
+
+--Expected
+(ns foo
+  (:require
+   [aaa.core]
+   #_disc
+   ^:no-doc
+   [zzz.core :as z]))
+--Expected

@@ -150,3 +150,30 @@
   }
 }
 --Expected
+
+# a discard between metadata and a libspec travels with the libspec
+
+--Input
+(ns foo
+  (:require
+   ^:no-doc #_disc
+   [zzz.core :as z]
+   [aaa.core]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requires": [
+    {
+      "symbol": "aaa.core"
+    },
+    {
+      "symbol": "zzz.core",
+      "as": "z",
+      "commentsAbove": ["#_disc"],
+      "metadata": ["^:no-doc"]
+    }
+  ]
+}
+--Expected

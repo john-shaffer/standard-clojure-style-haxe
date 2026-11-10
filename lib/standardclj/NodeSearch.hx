@@ -19,7 +19,7 @@ class NodeSearch {
 		return out;
 	}
 
-	/** Comments between a `meta` node's metadata and its body. **/
+	/** Comments and discards between a `meta` node's metadata and its body. **/
 	public static function metaComments(meta:Node):Array<String> {
 		final out:Array<String> = [];
 		for (child in meta.children) {
@@ -27,6 +27,8 @@ class NodeSearch {
 				break;
 			if (isComment(child))
 				out.push(child.text);
+			else if (isReaderComment(child))
+				out.push(textOf(child));
 
 		}
 		return out;
