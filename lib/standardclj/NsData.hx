@@ -19,7 +19,7 @@ class Symbol {
 class Rename {
 	public final fromSymbol:String;
 	public final toSymbol:String;
-	public final platform:Null<String>;
+	public var platform:Null<String>;
 
 	public function new(fromSymbol:String, toSymbol:String, platform:Null<String>) {
 		this.fromSymbol = fromSymbol;

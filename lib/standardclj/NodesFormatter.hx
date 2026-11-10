@@ -507,7 +507,7 @@ class NodesFormatter {
 
 			var nsStr = null;
 			try {
-				nsStr = NsFormatter.format(NsJson.toJson(parsedNs));
+				nsStr = NsFormatter.format(parsedNs);
 			} catch (e:haxe.Exception) {
 				return Failure(e.message);
 			}
