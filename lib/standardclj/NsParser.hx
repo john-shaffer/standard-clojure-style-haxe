@@ -299,7 +299,7 @@ class NsParser {
 		target = {from: l, to: l, set: set};
 	}
 
-	// a comment after the closing bracket of a multi-line libspec belongs to it
+	// a comment after the closing bracket of a multi-line libspec or package list belongs to it
 	function extendTargetToEndOf(form:Node):Void {
 		if (target != null)
 			target.to = Std.int(Math.max(target.to, line(lastDescendant(form))));
@@ -620,8 +620,10 @@ class NsParser {
 			} else if (form.name == "brackets" || form.name == "parens") {
 				final spec = slots(form, s.platform);
 				var j = skipTrivia(spec, 0);
-				if (j < spec.length && isToken(spec[j].node) && !isKeyword(spec[j].node))
+				if (j < spec.length && isToken(spec[j].node) && !isKeyword(spec[j].node)) {
 					requireOptions(spec, j + 1, entry(spec[j].node, spec[j].platform));
+					extendTargetToEndOf(form);
+				}
 			}
 		}
 	}
@@ -733,6 +735,7 @@ class NsParser {
 			if (isToken(c))
 				imported.classes.push(c.text);
 		}
+		extendTargetToEndOf(form);
 	}
 
 	function addImport(packageName:String, at:Node, platform:Null<String>):Import {

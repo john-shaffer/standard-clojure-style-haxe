@@ -70,3 +70,26 @@
   (:require
    [b])) (def x) ;; c
 --Expected
+
+# trailing comments after multi-line prefix list entries and import package lists stay with them
+
+--Input
+(ns a
+  (:require [b
+             [c
+              :as d] ;; x
+             [e]])
+  (:import (f G
+              H) ;; y
+           (i J)))
+--Input
+
+--Expected
+(ns a
+  (:require
+   [b.c :as d] ;; x
+   [b.e])
+  (:import
+   (f G H) ;; y
+   (i J)))
+--Expected

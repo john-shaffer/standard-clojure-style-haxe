@@ -409,3 +409,55 @@
   "errorMessage": ":require-macros :foo is not a supported option."
 }
 --Expected
+
+# comment after a multi-line prefix list entry belongs to the entry
+
+--Input
+(ns a
+  (:require [b
+             [c
+              :as d] ;; x
+             [e]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b.c",
+      "as": "d",
+      "commentAfter": ";; x"
+    },
+    {
+      "symbol": "b.e"
+    }
+  ]
+}
+--Expected
+
+# comment after a multi-line import package list belongs to the package
+
+--Input
+(ns a
+  (:import (b C
+              D) ;; x
+           (e F)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "imports": [
+    {
+      "package": "b",
+      "classes": ["C", "D"],
+      "commentAfter": ";; x"
+    },
+    {
+      "package": "e",
+      "classes": ["F"]
+    }
+  ]
+}
+--Expected
