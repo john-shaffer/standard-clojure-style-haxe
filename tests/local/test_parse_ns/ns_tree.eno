@@ -177,3 +177,32 @@
   ]
 }
 --Expected
+
+# a prefix list inside a reader conditional gives its requires the platform
+
+--Input
+(ns foo
+  (:require
+   #?(:clj [clojure [string :as str] set])
+   [other.lib]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requires": [
+    {
+      "symbol": "clojure.set",
+      "platform": ":clj"
+    },
+    {
+      "symbol": "clojure.string",
+      "as": "str",
+      "platform": ":clj"
+    },
+    {
+      "symbol": "other.lib"
+    }
+  ]
+}
+--Expected

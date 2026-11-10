@@ -614,12 +614,14 @@ class NsParser {
 		targetLine(prefix, c -> list.after = c);
 
 		// an entry on the line of the prefix leaves the comments there with the prefix list
-		function entry(symbol:Node):Dynamic {
+		function entry(symbol:Node, platform:Null<String>):Dynamic {
 			final req:Dynamic = {};
 			final meta = takeMetadata();
 			if (meta != null)
 				req.metadata = meta;
 			req.symbol = prefix.text + "." + symbol.text;
+			if (platform != null)
+				req.platform = platform;
 			requires.push({data: req, prefixList: list});
 			if (line(symbol) != prefixLine)
 				targetLine(symbol, c -> req.commentAfter = c);
@@ -627,17 +629,18 @@ class NsParser {
 		}
 
 		while ((i = skipTrivia(ss, i)) < ss.length) {
-			final form = unwrapMetadata(ss[i++].node);
+			final s = ss[i++];
+			final form = unwrapMetadata(s.node);
 			if (form == null)
 				continue;
 			if (isToken(form)) {
 				if (!isKeyword(form))
-					entry(form);
+					entry(form, s.platform);
 			} else if (form.name == "brackets" || form.name == "parens") {
-				final spec = slots(form, null);
+				final spec = slots(form, s.platform);
 				var j = skipTrivia(spec, 0);
 				if (j < spec.length && isToken(spec[j].node) && !isKeyword(spec[j].node))
-					requireOptions(spec, j + 1, entry(spec[j].node));
+					requireOptions(spec, j + 1, entry(spec[j].node, spec[j].platform));
 			}
 		}
 	}
