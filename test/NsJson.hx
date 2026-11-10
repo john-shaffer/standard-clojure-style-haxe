@@ -1,4 +1,4 @@
-package standardclj;
+package;
 
 import standardclj.NsData;
 
