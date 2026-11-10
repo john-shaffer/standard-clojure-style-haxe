@@ -21,6 +21,8 @@ class Main {
 		final args = Sys.args();
 		final roots = [for (a in args) a];
 		final suites:Map<String, Case->Null<String>> = [
+			"test_format" => FormatSuite.run,
+			"test_parse_ns" => ParseNsSuite.run,
 			"test_parser" => parserTest,
 		];
 		for (root in roots) {
