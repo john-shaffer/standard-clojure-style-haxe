@@ -45,3 +45,16 @@
    ^:no-doc
    [zzz.core :as z]))
 --Expected
+
+# require-macros :refer :all is printed
+
+--Input
+(ns foo
+  (:require-macros [a.macros :refer :all]))
+--Input
+
+--Expected
+(ns foo
+  (:require-macros
+   [a.macros :refer :all]))
+--Expected

@@ -206,3 +206,24 @@
   ]
 }
 --Expected
+
+# require-macros :refer :all is refer all, as in :require
+
+--Input
+(ns foo
+  (:require-macros
+   [a.macros :refer :all :as m]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requireMacros": [
+    {
+      "symbol": "a.macros",
+      "as": "m",
+      "refer": "all"
+    }
+  ]
+}
+--Expected

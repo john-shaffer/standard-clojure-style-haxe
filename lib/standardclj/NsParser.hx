@@ -817,6 +817,8 @@ class NsParser {
 			switch key.text {
 				case ":as" if (isToken(v)):
 					req.as = v.text;
+				case ":refer" if (isToken(v) && v.text == ":all"):
+					req.refer = "all";
 				case ":refer" if (isToken(v)):
 					arrayField(req, "refer").push(symbolItem(v.text, value.platform));
 				case ":refer":
