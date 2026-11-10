@@ -1,0 +1,5 @@
+-cp lib
+-cp cli
+-dce full
+-main Cli
+-neko standard-clj.n

@@ -1,0 +1,762 @@
+# gen-class constructors with multiple signatures
+
+--Input
+(ns foo
+ (:gen-class
+ :main true
+ :constructors { [java.lang.String] []
+ [] [], [String long] [String] }
+ :name foo.Bar))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :constructors {[java.lang.String] []
+                  [] []
+                  [String long] [String]}
+   :main true))
+--Expected
+
+# empty gen-class constructors
+
+--Input
+(ns foo (:gen-class :constructors {} :main false))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :constructors {}
+   :main false))
+--Expected
+
+# single gen-class constructor
+
+--Input
+(ns foo (:gen-class :constructors { [String] [Object] }))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :constructors {[String] [Object]}))
+--Expected
+
+# gen-class constructors with commas and mixed type symbols
+
+--Input
+(ns foo
+ (:gen-class
+ :constructors {[long double], [long],
+ [java.lang.String clojure.lang.IPersistentMap], []}
+ :prefix "native-"))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :constructors {[long double] [long]
+                  [java.lang.String clojure.lang.IPersistentMap] []}
+   :prefix "native-"))
+--Expected
+
+# comments on gen-class constructors
+
+--Input
+(ns foo
+ (:gen-class
+ ;; constructors above
+ :constructors {[String] []
+ [long] [long]} ; constructors after
+ :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   ;; constructors above
+   :constructors {[String] []
+                  [long] [long]} ; constructors after
+   :main true))
+--Expected
+
+# gen-class constructors inside a reader conditional
+
+--Input
+(ns foo
+ #?(:clj (:gen-class :constructors {[String] []} :main true)))
+--Input
+
+--Expected
+(ns foo
+  #?(:clj
+     (:gen-class
+      :constructors {[String] []}
+      :main true)))
+--Expected
+
+# gen-class methods with multiple signatures
+
+--Input
+(ns foo
+ (:gen-class
+ :main true
+ :methods [ [foo [String long] void]
+ [bar [] String] ]
+ :name foo.Bar))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :methods [[foo [String long] void]
+             [bar [] String]]
+   :main true))
+--Expected
+
+# empty gen-class methods
+
+--Input
+(ns foo (:gen-class :methods [] :main false))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :methods []
+   :main false))
+--Expected
+
+# single gen-class method
+
+--Input
+(ns foo (:gen-class :methods [[foo [] void]]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :methods [[foo [] void]]))
+--Expected
+
+# gen-class methods with commas and mixed type symbols
+
+--Input
+(ns foo
+ (:gen-class
+ :methods [[transform, [java.lang.String, clojure.lang.IPersistentMap, long], java.lang.Object],
+ [reset, [], void]]
+ :prefix "native-"))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :methods [[transform [java.lang.String clojure.lang.IPersistentMap long] java.lang.Object]
+             [reset [] void]]
+   :prefix "native-"))
+--Expected
+
+# comments on gen-class methods
+
+--Input
+(ns foo
+ (:gen-class
+ ;; comment above
+ :methods [[foo [] void]
+ [bar [String] String]] ; comment after
+ :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   ;; comment above
+   :methods [[foo [] void]
+             [bar [String] String]] ; comment after
+   :main true))
+--Expected
+
+# gen-class methods inside a reader conditional
+
+--Input
+(ns foo
+ #?(:clj (:gen-class :methods [[foo [] void]] :main true)))
+--Input
+
+--Expected
+(ns foo
+  #?(:clj
+     (:gen-class
+      :methods [[foo [] void]]
+      :main true)))
+--Expected
+
+# gen-class methods preserve metadata
+
+--Input
+(ns foo
+ (:gen-class
+ :methods [[^{:static true} create [^Deprecated String] Object]]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :methods [[^{:static true} create [^Deprecated String] Object]]))
+--Expected
+
+# gen-class exposes and exposes-methods
+
+--Input
+(ns foo
+ (:gen-class
+ :exposes { z-field {:set setZ :get getZ}
+ a-field {:get getA}
+ write-only {:set setWriteOnly}
+ noop {} }
+ :exposes-methods { z-method callSuperZ
+ a-method callSuperA }
+ :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :main true
+   :exposes {z-field {:get getZ :set setZ}
+             a-field {:get getA}
+             write-only {:set setWriteOnly}
+             noop {}}
+   :exposes-methods {z-method callSuperZ
+                     a-method callSuperA}))
+--Expected
+
+# empty gen-class exposes maps
+
+--Input
+(ns foo (:gen-class :exposes {} :exposes-methods {}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :exposes {}
+   :exposes-methods {}))
+--Expected
+
+# single gen-class exposed field
+
+--Input
+(ns foo (:gen-class :exposes {value {:get getValue :set setValue}}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :exposes {value {:get getValue :set setValue}}))
+--Expected
+
+# gen-class exposes accepts commas
+
+--Input
+(ns foo
+ (:gen-class
+ :exposes {value, {:set, setValue, :get, getValue}, other, {:get, getOther}}
+ :exposes-methods {close, callSuperClose, reset, callSuperReset}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :exposes {value {:get getValue :set setValue}
+             other {:get getOther}}
+   :exposes-methods {close callSuperClose
+                     reset callSuperReset}))
+--Expected
+
+# comments on gen-class exposes values
+
+--Input
+(ns foo
+ (:gen-class
+ ;; exposed fields above
+ :exposes {value {:get getValue}} ; exposed fields after
+ ;; exposed methods above
+ :exposes-methods {close callSuperClose} ; exposed methods after
+ :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :main true
+   ;; exposed fields above
+   :exposes {value {:get getValue}} ; exposed fields after
+   ;; exposed methods above
+   :exposes-methods {close callSuperClose})) ; exposed methods after
+--Expected
+
+# gen-class exposes inside a reader conditional
+
+--Input
+(ns foo
+ #?(:clj (:gen-class
+ :exposes {value {:get getValue}}
+ :exposes-methods {close callSuperClose})))
+--Input
+
+--Expected
+(ns foo
+  #?(:clj
+     (:gen-class
+      :exposes {value {:get getValue}}
+      :exposes-methods {close callSuperClose})))
+--Expected
+
+# gen-class exposes preserves metadata
+
+--Input
+(ns foo
+ (:gen-class
+ :exposes {^String value {:get ^:deprecated readValue :set writeValue}}
+ :exposes-methods {^:deprecated close callSuperClose}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :exposes {^String value {:get ^:deprecated readValue :set writeValue}}
+   :exposes-methods {^:deprecated close callSuperClose}))
+--Expected
+
+# all structured gen-class values together
+
+--Input
+(ns foo
+ (:gen-class
+ :exposes-methods {close callSuperClose}
+ :methods [[run [] void]]
+ :exposes {value {:get getValue}}
+ :constructors {[String] []}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :constructors {[String] []}
+   :methods [[run [] void]]
+   :exposes {value {:get getValue}}
+   :exposes-methods {close callSuperClose}))
+--Expected
+
+# gen-class static method signature metadata
+
+--Input
+(ns foo
+ (:gen-class
+ :methods [ ^{:static true} [create [] Object]
+ [instanceMethod [String] String] ]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :methods [^{:static true} [create [] Object]
+             [instanceMethod [String] String]]))
+--Expected
+
+# gen-class constructor annotations
+
+--Input
+(ns foo
+ (:gen-class
+ :constructors { ^{Deprecated {}} [String] []
+ [long] [] }
+ :init init))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :init init
+   :constructors {^{Deprecated {}} [String] []
+                  [long] []}))
+--Expected
+
+# gen-class class annotations
+
+--Input
+(ns foo
+ (:gen-class
+ :main true
+ :name ^{Deprecated {}} example.Widget))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name ^{Deprecated {}} example.Widget
+   :main true))
+--Expected
+
+# gen-class names supplied as strings
+
+--Input
+(ns foo
+ (:gen-class
+ :load-impl-ns false
+ :impl-ns "example.widget-impl"
+ :prefix "native-"
+ :exposes-methods { "close" "callSuperClose" }
+ :exposes { "in" { :set "setIn", :get "getIn" } }
+ :state "state"
+ :factory "create"
+ :methods [ [ "transform", [ "java.lang.String" ], "java.lang.Object" ] ]
+ :post-init "postInit"
+ :constructors { [ "java.io.InputStream" ] [ "java.io.InputStream" ] }
+ :init "init"
+ :implements [ "java.lang.Runnable" ]
+ :extends "java.io.FilterInputStream"
+ :name "example.Widget"))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name "example.Widget"
+   :extends "java.io.FilterInputStream"
+   :implements ["java.lang.Runnable"]
+   :init "init"
+   :constructors {["java.io.InputStream"] ["java.io.InputStream"]}
+   :post-init "postInit"
+   :methods [["transform" ["java.lang.String"] "java.lang.Object"]]
+   :factory "create"
+   :state "state"
+   :exposes {"in" {:get "getIn" :set "setIn"}}
+   :exposes-methods {"close" "callSuperClose"}
+   :prefix "native-"
+   :impl-ns "example.widget-impl"
+   :load-impl-ns false))
+--Expected
+
+# gen-class metadata on name-like values
+
+--Input
+(ns foo
+ (:gen-class
+ :extends ^{Deprecated {}} java.io.FilterInputStream
+ :init ^:private init
+ :state ^{:doc "the state"} state))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :extends ^{Deprecated {}} java.io.FilterInputStream
+   :init ^:private init
+   :state ^{:doc "the state"} state))
+--Expected
+
+# gen-class metadata on name-like string values
+
+--Input
+(ns foo
+ (:gen-class
+ :extends ^{Deprecated {}} "java.io.FilterInputStream"
+ :factory ^:a ^:b "create"))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :extends ^{Deprecated {}} "java.io.FilterInputStream"
+   :factory ^:a ^:b "create"))
+--Expected
+
+# GitHub Issue #233 - gen-class :implements keeps comments above and after
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/233
+
+--Input
+(ns foo
+  (:gen-class
+   ;; comment above implements
+   :implements [java.lang.Runnable] ;; after
+   :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   ;; comment above implements
+   :implements [java.lang.Runnable] ;; after
+   :main true))
+--Expected
+
+# GitHub Issue #233 - gen-class :implements with multiple comments above, sorting, and key reordering
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/233
+
+--Input
+(ns foo
+  (:gen-class ;; after gen-class
+   ;; first comment above implements
+   ;; second comment above implements
+   :implements [zap.zip.RockSock
+                foo.bar.BizBang] ;; after implements
+   ;; above name
+   :name foo.Bar))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class ;; after gen-class
+   ;; above name
+   :name foo.Bar
+   ;; first comment above implements
+   ;; second comment above implements
+   :implements [foo.bar.BizBang zap.zip.RockSock])) ;; after implements
+--Expected
+
+# GitHub Issue #225 - gen-class :prefix with an empty string value
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:gen-class :prefix ""))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :prefix ""))
+--Expected
+
+# GitHub Issue #225 - gen-class every name-like key with an empty string value
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   :name ""
+   :extends ""
+   :init ""
+   :post-init ""
+   :factory ""
+   :state ""
+   :impl-ns ""))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name ""
+   :extends ""
+   :init ""
+   :post-init ""
+   :factory ""
+   :state ""
+   :impl-ns ""))
+--Expected
+
+# GitHub Issue #225 - gen-class empty string values mixed with other values and sorted
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   :main true
+   :prefix ""
+   :extends java.lang.Object
+   :name ""
+   :init "init"))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name ""
+   :extends java.lang.Object
+   :init "init"
+   :main true
+   :prefix ""))
+--Expected
+
+# GitHub Issue #225 - gen-class empty string value does not swallow the key that follows it
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:gen-class :name "" :main true))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name ""
+   :main true))
+--Expected
+
+# GitHub Issue #225 - gen-class :implements with an empty string
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:gen-class :implements [""]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :implements [""]))
+--Expected
+
+# GitHub Issue #225 - gen-class :implements with an empty string among other values
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:gen-class :implements ["" java.lang.Runnable "java.io.Closeable"]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :implements ["" "java.io.Closeable" java.lang.Runnable]))
+--Expected
+
+# GitHub Issue #225 - gen-class metadata on empty string values is preserved
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   :state ^{:doc "the state"} ""
+   :name ^:private ""))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name ^:private ""
+   :state ^{:doc "the state"} ""))
+--Expected
+
+# GitHub Issue #225 - gen-class comments after empty string values
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   :prefix "" ;; empty prefix
+   :name "" ;; empty name
+   ))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name "" ;; empty name
+   :prefix "")) ;; empty prefix
+--Expected
+
+# GitHub Issue #225 - gen-class comment above and after an empty string value
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   ;; above prefix
+   :prefix "")) ;; after prefix
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   ;; above prefix
+   :prefix "")) ;; after prefix
+--Expected
+
+# GitHub Issue #225 - gen-class with an empty string value inside a reader conditional
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo #?(:clj (:gen-class :prefix "")))
+--Input
+
+--Expected
+(ns foo
+  #?(:clj
+     (:gen-class
+      :prefix "")))
+--Expected
+
+# GitHub Issue #225 - gen-class empty string value when gen-class is not the last main form
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class :prefix "")
+  (:require [a.b]))
+--Input
+
+--Expected
+(ns foo
+  (:require
+   [a.b])
+  (:gen-class
+   :prefix ""))
+--Expected
+
+# GitHub Issue #225 - gen-class empty strings inside :methods :exposes :exposes-methods and :constructors
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo
+  (:gen-class
+   :constructors {[""] [""]}
+   :methods [["" [] ""]]
+   :exposes {"" {:get "" :set ""}}
+   :exposes-methods {"" ""}))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :constructors {[""] [""]}
+   :methods [["" [] ""]]
+   :exposes {"" {:get "" :set ""}}
+   :exposes-methods {"" ""}))
+--Expected
+
+# GitHub Issue #225 - empty string outside of gen-class is unchanged
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:gen-class :prefix "-"))
+
+(def x "")
+(def y {"" ""})
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :prefix "-"))
+
+(def x "")
+(def y {"" ""})
+--Expected

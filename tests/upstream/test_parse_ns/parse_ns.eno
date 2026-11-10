@@ -1,0 +1,4610 @@
+# simple namespace 1
+
+--Input
+(ns com.example.my-app)
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app"
+}
+--Expected
+
+# simple namespace 2
+
+--Input
+(
+  ns com.example.my-app
+
+)
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app"
+}
+--Expected
+
+# namespace with multiple :require
+
+--Input
+(ns com.example.my-app
+  (:require com.example.my-app.bbb [com.example.my-app.ccc])
+  (:require com.example.my-app.aaa)
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "com.example.my-app.aaa"
+    },
+    {
+      "symbol": "com.example.my-app.bbb"
+    },
+    {
+      "symbol": "com.example.my-app.ccc"
+    }
+  ]
+}
+--Expected
+
+# namespace with require + imports
+
+--Input
+(ns com.example.my-app
+  (:require com.example.my-app.bbb com.example.my-app.ccc com.example.my-app.aaa)
+  (:import java.io.File
+           (xxx.yyy.zzz Bravo Alpha Delta Charlie)
+           hhh.eee.Ccc
+           hhh.eee.Bbb
+           (java.util Date UUID))
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "imports": [
+    {
+      "package": "hhh.eee",
+      "classes": ["Bbb", "Ccc"]
+    },
+    {
+      "package": "java.io",
+      "classes": ["File"]
+    },
+    {
+      "package": "java.util",
+      "classes": ["Date", "UUID"]
+    },
+    {
+      "package": "xxx.yyy.zzz",
+      "classes": ["Alpha", "Bravo", "Charlie", "Delta"]
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "com.example.my-app.aaa"
+    },
+    {
+      "symbol": "com.example.my-app.bbb"
+    },
+    {
+      "symbol": "com.example.my-app.ccc"
+    }
+  ]
+}
+--Expected
+
+# namespace with :require :as
+
+--Input
+(ns com.example.my-app
+  (:require com.example.my-app.bbb [com.example.my-app.ccc :as ccc])
+  (:require [com.example.my-app.aaa :as aaa)
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "as": "aaa",
+      "symbol": "com.example.my-app.aaa"
+    },
+    {
+      "symbol": "com.example.my-app.bbb"
+    },
+    {
+      "as": "ccc",
+      "symbol": "com.example.my-app.ccc"
+    }
+  ]
+}
+--Expected
+
+# namespace with :refer-clojure :exclude
+
+--Input
+(ns com.example.my-app
+  (:refer-clojure :exclude [print get nth]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "exclude": [
+      {"symbol": "get"},
+      {"symbol": "nth"},
+      {"symbol": "print"}
+    ]
+  }
+}
+--Expected
+
+# namespace with :refer-clojure :only
+
+--Input
+(ns com.example.my-app
+  (:refer-clojure :only [set conj number? get ==]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "only": [
+      {"symbol": "=="},
+      {"symbol": "conj"},
+      {"symbol": "get"},
+      {"symbol": "number?"},
+      {"symbol": "set"}
+    ]
+  }
+}
+--Expected
+
+# namespace with :refer-clojure :rename
+
+--Input
+(ns com.example.my-app
+  (:require bbb.ccc bbb, aaa)
+  (:refer-clojure :rename {print core-print get g,  number? is-number ->> thread-last}
+  )
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "rename": [
+      {
+        "fromSymbol": "->>",
+        "toSymbol": "thread-last"
+      },
+      {
+        "fromSymbol": "get",
+        "toSymbol": "g"
+      },
+      {
+        "fromSymbol": "number?",
+        "toSymbol": "is-number"
+      },
+      {
+        "fromSymbol": "print",
+        "toSymbol": "core-print"
+      }
+    ]
+  },
+  "requires": [
+    {
+      "symbol": "aaa"
+    },
+    {
+      "symbol": "bbb"
+    },
+    {
+      "symbol": "bbb.ccc"
+    }
+  ]
+}
+--Expected
+
+# refer-clojure with reader conditionals 1
+
+--Input
+(ns com.example.my-app
+  (:refer-clojure :only [#?@(:cljs [dissoc conj])]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "only": [
+      {
+        "symbol": "conj",
+        "platform": ":cljs"
+      },
+      {
+        "symbol": "dissoc",
+        "platform": ":cljs"
+      }
+    ]
+  }
+}
+--Expected
+
+# namespace with :require, :refer, :as
+
+--Input
+(ns com.example.my-app
+  (:require
+    [com.example.duck :as duck :refer [quack quacking eat sleep]]
+    aaa.bbb
+    [com.example.cow :refer [moo eat-grass] :as cow]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "aaa.bbb"
+    },
+    {
+      "as": "cow",
+      "symbol": "com.example.cow",
+      "refer": [
+        {"symbol": "eat-grass"},
+        {"symbol": "moo"}
+      ]
+    },
+    {
+      "as": "duck",
+      "symbol": "com.example.duck",
+      "refer": [
+        {"symbol": "eat"},
+        {"symbol": "quack"},
+        {"symbol": "quacking"},
+        {"symbol": "sleep"}
+      ]
+    }
+  ]
+}
+--Expected
+
+# namespace with :require :refer :all
+
+--Input
+(ns com.example.my-app
+  (:require
+    [com.example.duck :as duck :refer :all]
+    aaa.bbb
+    [com.example.cow :refer [moo eat-grass] :as cow]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "aaa.bbb"
+    },
+    {
+      "as": "cow",
+      "symbol": "com.example.cow",
+      "refer": [
+        {"symbol": "eat-grass"},
+        {"symbol": "moo"}
+      ]
+    },
+    {
+      "as": "duck",
+      "symbol": "com.example.duck",
+      "refer": "all"
+    }
+  ]
+}
+--Expected
+
+# namespace with docstring
+
+--Input
+(ns com.example.my-app
+  "Mary had a little lamb
+  Its fleece was white as snow")
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "docstring": "Mary had a little lamb\n  Its fleece was white as snow"
+}
+--Expected
+
+# namespace with require comments
+
+--Input
+(ns com.example.my-app
+  (:require
+    [com.example.duck :as duck :refer [quack quacking eat sleep]] ; NOTE: this ns is primarily focused on Mallards
+    ;; include aaa.bbb for reasons
+;; please see Issue #NaN for deeper explanation
+    aaa.bbb
+    ;; the cow namespace is deprecated, please refactor
+    [com.example.cow :refer [moo eat-grass] :as cow]) ;; the cow goes "moo"
+    )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "commentsAbove": [
+        ";; include aaa.bbb for reasons",
+        ";; please see Issue #NaN for deeper explanation"
+      ],
+      "symbol": "aaa.bbb"
+    },
+    {
+      "as": "cow",
+      "commentsAbove": [";; the cow namespace is deprecated, please refactor"],
+      "commentAfter": ";; the cow goes \"moo\"",
+      "symbol": "com.example.cow",
+      "refer": [
+        {"symbol": "eat-grass"},
+        {"symbol": "moo"}
+      ]
+    },
+    {
+      "as": "duck",
+      "commentAfter": "; NOTE: this ns is primarily focused on Mallards",
+      "symbol": "com.example.duck",
+      "refer": [
+        {"symbol": "eat"},
+        {"symbol": "quack"},
+        {"symbol": "quacking"},
+        {"symbol": "sleep"}
+      ]
+    }
+  ]
+}
+--Expected
+
+# namespace with require comments 2
+
+--Input
+(ns com.example.my-app
+  (:require
+    #_{:clj-kondo/ignore [:discouraged-namespace]}
+    [com.example.bbb :as bbb]
+    [com.example.aaa] #_ "AAA"
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "commentAfter": "#_ \"AAA\"",
+      "symbol": "com.example.aaa"
+    },
+    {
+      "as": "bbb",
+      "commentsAbove": ["#_{:clj-kondo/ignore [:discouraged-namespace]}"],
+      "symbol": "com.example.bbb"
+    }
+  ]
+}
+--Expected
+
+# namespace with import comments
+
+> NOTE: in this test case, the ";; fin" comment is ignored by the parser
+> We should probably print it after the (ns) form
+
+--Input
+(ns com.example.my-app
+  ;;; I'm a little teapot
+  ;;; Short and stout
+  (:import ; Here is my handle
+
+  ;; Here is my spout
+;; When I get all steamed up
+     (java.util Date UUID) ; Hear me shout
+     ;; Tip me over
+     ;; And pour me out!
+     aaa.bbb.Ccc ;; HTTP 418
+;; fin
+  )
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "importCommentsAbove": [
+    ";;; I'm a little teapot",
+    ";;; Short and stout"
+  ],
+  "importCommentAfter": "; Here is my handle",
+  "imports": [
+    {
+      "classes": ["Ccc"],
+      "commentsAbove": [
+        ";; Tip me over",
+        ";; And pour me out!"
+      ],
+      "commentAfter": ";; HTTP 418",
+      "package": "aaa.bbb"
+    },
+    {
+      "commentsAbove": [
+        ";; Here is my spout",
+        ";; When I get all steamed up"
+      ],
+      "commentAfter": "; Hear me shout",
+      "classes": ["Date", "UUID"],
+      "package": "java.util"
+    }
+  ]
+}
+--Expected
+
+# namespace with refer-clojure comments
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:refer-clojure :only [number? -> set])) ; ccc
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojureCommentsAbove": [
+    ";; aaa",
+    ";; bbb"
+  ],
+  "referClojureCommentAfterForm": "; ccc",
+  "referClojure": {
+    "only": [
+      {"symbol": "->"},
+      {"symbol": "number?"},
+      {"symbol": "set"}
+    ]
+  },
+  "commentOutsideNsForm": "; ccc"
+}
+--Expected
+
+> TODO: need a test for ns.requireCommentsAbove
+
+# namespace with comment outside ns form
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:require [aaa :as a])) ;; if only it were this easy
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requireCommentsAbove": [
+    ";; aaa",
+    ";; bbb"
+  ],
+  "requires": [
+    {
+      "as": "a",
+      "commentAfter": ";; if only it were this easy",
+      "symbol": "aaa"
+    }
+  ],
+  "commentOutsideNsForm": ";; if only it were this easy"
+}
+--Expected
+
+# expand prefix lists in require
+
+--Input
+(ns com.example.my-app
+  (:require
+    (com.example client server routes)
+    com.example.aaa
+    [com.example bbb ccc]
+    [com.example.xxx zzz yyy]
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "com.example.aaa"
+    },
+    {
+      "symbol": "com.example.bbb"
+    },
+    {
+      "symbol": "com.example.ccc"
+    },
+    {
+      "symbol": "com.example.client"
+    },
+    {
+      "symbol": "com.example.routes"
+    },
+    {
+      "symbol": "com.example.server"
+    },
+    {
+      "symbol": "com.example.xxx.yyy"
+    },
+    {
+      "symbol": "com.example.xxx.zzz"
+    }
+  ]
+}
+--Expected
+
+# prefix lists with comments
+
+--Input
+(ns com.example.my-app
+  (:require
+    ;; aaa
+    ;; bbb
+    (com.example server client routes) ;; ccc
+    com.example.db))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "commentsAbove": [
+        ";; aaa",
+        ";; bbb"
+      ],
+      "commentAfter": ";; ccc",
+      "symbol": "com.example.client"
+    },
+    {
+      "symbol": "com.example.db"
+    },
+    {
+      "symbol": "com.example.routes"
+    },
+    {
+      "symbol": "com.example.server"
+    }
+  ]
+}
+--Expected
+
+# reader conditionals in ns 1
+
+--Input
+(ns com.example.my-app
+  (:require
+    #?(:clj  [com.example.eee]
+       :cljs [com.example.ddd])
+    com.example.fff
+    #?(:cljs com.example.bbb)
+    com.example.ccc
+    #?(:clj com.example.aaa)
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "platform": ":clj",
+      "symbol": "com.example.aaa"
+    },
+    {
+      "platform": ":cljs",
+      "symbol": "com.example.bbb"
+    },
+    {
+      "symbol": "com.example.ccc"
+    },
+    {
+      "platform": ":cljs",
+      "symbol": "com.example.ddd"
+    },
+    {
+      "platform": ":clj",
+      "symbol": "com.example.eee"
+    },
+    {
+      "symbol": "com.example.fff"
+    }
+  ]
+}
+--Expected
+
+# reader conditionals in ns 2
+
+--Input
+(ns com.example.my-app
+  (:require
+    #?(:clj  [com.example.eee]
+       :cljs [com.example.ddd :as d] ;; ddd
+       :elephant com.example.yyy)
+    com.example.fff
+    #?@(:cljs [com.example.bbb-cljs]
+        :elephant [com.example.bbb-elephant]
+        :default [com.example.bbb-default])
+    com.example.ccc
+    #?(:clj com.example.aaa)
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "platform": ":clj",
+      "symbol": "com.example.aaa"
+    },
+    {
+      "platform": ":cljs",
+      "symbol": "com.example.bbb-cljs"
+    },
+    {
+      "platform": ":default",
+      "symbol": "com.example.bbb-default"
+    },
+    {
+      "platform": ":elephant",
+      "symbol": "com.example.bbb-elephant"
+    },
+    {
+      "symbol": "com.example.ccc"
+    },
+    {
+      "as": "d",
+      "commentAfter": ";; ddd",
+      "platform": ":cljs",
+      "symbol": "com.example.ddd"
+    },
+    {
+      "platform": ":clj",
+      "symbol": "com.example.eee"
+    },
+    {
+      "symbol": "com.example.fff"
+    },
+    {
+      "platform": ":elephant",
+      "symbol": "com.example.yyy"
+    }
+  ]
+}
+--Expected
+
+# reader conditionals in ns 3
+
+--Input
+(ns com.example.module-test
+  (:require #?(:clj  [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [is]])
+            #?(:cljs [cljs.test.check :refer [quick-check]]) ;; aaa
+            #?(:clj  [clojure.test.check.clojure-test :refer [defspec]]
+               :cljs [cljs.test.check.cljs-test :refer-macros [defspec]])
+            #?(:clj  [clojure.test.check.properties :as prop]
+               :cljs [cljs.test.check.properties :as prop
+                       :include-macros true])
+            [schema.core :as schema :refer [check]]
+            [com.example.schema.ids :refer [Foo]]
+            [com.example.generators
+             :refer [gen-part-no gen-invalid-part-no]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.module-test",
+  "requires": [
+    {
+      "platform": ":cljs",
+      "referMacros": ["is"],
+      "symbol": "cljs.test"
+    },
+    {
+      "commentAfter": ";; aaa",
+      "platform": ":cljs",
+      "refer": [{"symbol": "quick-check"}],
+      "symbol": "cljs.test.check"
+    },
+    {
+      "platform": ":cljs",
+      "referMacros": ["defspec"],
+      "symbol": "cljs.test.check.cljs-test"
+    },
+    {
+      "as": "prop",
+      "includeMacros": true,
+      "platform": ":cljs",
+      "symbol": "cljs.test.check.properties"
+    },
+    {
+      "platform": ":clj",
+      "refer": "all",
+      "symbol": "clojure.test"
+    },
+    {
+      "platform": ":clj",
+      "refer": [{"symbol": "defspec"}],
+      "symbol": "clojure.test.check.clojure-test"
+    },
+    {
+      "as": "prop",
+      "platform": ":clj",
+      "symbol": "clojure.test.check.properties"
+    },
+    {
+      "refer": [
+        {"symbol": "gen-invalid-part-no"},
+        {"symbol": "gen-part-no"}
+      ],
+      "symbol": "com.example.generators"
+    },
+    {
+      "refer": [{"symbol": "Foo"}],
+      "symbol": "com.example.schema.ids"
+    },
+    {
+      "as": "schema",
+      "refer": [{"symbol": "check"}],
+      "symbol": "schema.core"
+    }
+  ]
+}
+--Expected
+
+# reader conditionals in ns 4
+
+--Input
+(ns com.example.my-app
+  (:require
+    #?(:clj  [com.example.eee]
+       :cljs [com.example.ddd :as d] ;; ddd
+       :elephant com.example.yyy)
+    com.example.fff
+    #?@(:cljs [com.example.bbb-cljs]
+        :elephant [com.example.bbb-elephant]
+        :default [com.example.bbb-default])
+    com.example.ccc
+    #?(:clj com.example.aaa))
+
+  (:import
+    xxx.yyy.Zzz
+    aaa.bbb.Ccc
+    #?@(:cljs goog.string.StringBuffer
+        :clj java.net.URI))
+
+  #?(:clj
+     (:import
+      [java.io StringReader]
+      java.net.InetAddress)
+
+     :cljs
+     (:import
+      [goog.module ModuleManager]
+      (goog.events EventType EventTarget)
+      goog.Uri)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "imports": [
+    {
+      "classes": ["Ccc"],
+      "package": "aaa.bbb"
+    },
+    {
+      "classes": ["Uri"],
+      "package": "goog",
+      "platform": ":cljs"
+    },
+    {
+      "classes": ["EventTarget", "EventType"],
+      "package": "goog.events",
+      "platform": ":cljs"
+    },
+    {
+      "classes": ["ModuleManager"],
+      "package": "goog.module",
+      "platform": ":cljs"
+    },
+    {
+      "classes": ["StringBuffer"],
+      "package": "goog.string",
+      "platform": ":cljs"
+    },
+    {
+      "classes": ["StringReader"],
+      "package": "java.io",
+      "platform": ":clj"
+    },
+    {
+      "classes": ["InetAddress", "URI"],
+      "package": "java.net",
+      "platform": ":clj"
+    },
+    {
+      "classes": ["Zzz"],
+      "package": "xxx.yyy"
+    }
+  ],
+  "requires": [
+    {
+      "platform": ":clj",
+      "symbol": "com.example.aaa"
+    },
+    {
+      "platform": ":cljs",
+      "symbol": "com.example.bbb-cljs"
+    },
+    {
+      "platform": ":default",
+      "symbol": "com.example.bbb-default"
+    },
+    {
+      "platform": ":elephant",
+      "symbol": "com.example.bbb-elephant"
+    },
+    {
+      "symbol": "com.example.ccc"
+    },
+    {
+      "as": "d",
+      "commentAfter": ";; ddd",
+      "platform": ":cljs",
+      "symbol": "com.example.ddd"
+    },
+    {
+      "platform": ":clj",
+      "symbol": "com.example.eee"
+    },
+    {
+      "symbol": "com.example.fff"
+    },
+    {
+      "platform": ":elephant",
+      "symbol": "com.example.yyy"
+    }
+  ]
+}
+--Expected
+
+# require-macros 1
+
+--Input
+(ns bar.core
+  (:require-macros [foo.core :refer [add]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requireMacros": [
+    {
+      "refer": [
+        {"symbol": "add"}
+      ],
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros 2
+
+--Input
+(ns bar.core
+  (:require-macros [foo.core :as foo])
+  (:require [foo.core :as foo]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requireMacros": [
+    {
+      "as": "foo",
+      "symbol": "foo.core"
+    }
+  ],
+  "requires": [
+    {
+      "as": "foo",
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros 3
+
+--Input
+(ns foo.core
+  (:require-macros foo.core))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo.core",
+  "requireMacros": [
+    {
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros 4
+
+--Input
+(ns bar.core
+  (:require-macros [foo.core :refer [add] :as quizzle])
+  (:require [foo.core :refer [subtract]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requireMacros": [
+    {
+      "as": "quizzle",
+      "refer": [
+        {"symbol": "add"}
+      ],
+      "symbol": "foo.core"
+    }
+  ],
+  "requires": [
+    {
+      "refer": [{"symbol":"subtract"}],
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros 5
+
+--Input
+(ns bar.core
+  (:require [foo.core :refer [subtract] :refer-macros [add]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requires": [
+    {
+      "refer": [{"symbol":"subtract"}],
+      "referMacros": ["add"],
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros with comments 1
+
+--Input
+(ns bar.core
+  ;; aaa
+  ;; bbb
+  ;; ccc
+  (:require-macros [foo.core :refer [bad add cad]] ;; rad
+  ;; xxx
+  ;; yyy
+  bar.core.util ;; util util util
+        [biz.com :as bc :refer [qux zoom banana]] ;; biz-com!
+        )    )
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requireMacrosCommentsAbove": [
+    ";; aaa",
+    ";; bbb",
+    ";; ccc"
+  ],
+  "requireMacros": [
+    {
+      "commentsAbove": [
+        ";; xxx",
+        ";; yyy"
+      ],
+      "commentAfter": ";; util util util",
+      "symbol": "bar.core.util"
+    },
+    {
+      "as": "bc",
+      "commentAfter": ";; biz-com!",
+      "refer": [
+        {"symbol": "banana"},
+        {"symbol": "qux"},
+        {"symbol": "zoom"}
+      ],
+      "symbol": "biz.com"
+    },
+    {
+      "commentAfter": ";; rad",
+      "refer": [
+        {"symbol": "add"},
+        {"symbol": "bad"},
+        {"symbol": "cad"}
+      ],
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros with comments 2
+
+--Input
+(ns bar.core
+  (:require-macros
+    [foo.core :refer [bad add cad]] ;; rad
+    [aaa.bbb :refer [ccc]] ;; ddd
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requireMacros": [
+    {
+      "commentAfter": ";; ddd",
+      "refer": [{"symbol": "ccc"}],
+      "symbol": "aaa.bbb"
+    },
+    {
+      "commentAfter": ";; rad",
+      "refer": [
+        {"symbol": "add"},
+        {"symbol": "bad"},
+        {"symbol": "cad"}
+      ],
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# require-macros with comments 3
+
+--Input
+(ns com.example.my-app
+  #?(:cljs
+     (:require-macros
+       [ccc.ddd :as d :refer [hhh ggg]]))) ;; ddd
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requireMacros": [
+    {
+      "as": "d",
+      "commentAfter": ";; ddd",
+      "refer": [
+        {
+          "symbol": "ggg",
+          "platform": ":cljs"
+        },
+        {
+          "symbol": "hhh",
+          "platform": ":cljs"
+        }
+      ],
+      "platform": ":cljs",
+      "symbol": "ccc.ddd"
+    }
+  ],
+  "commentOutsideNsForm": ";; ddd"
+}
+--Expected
+
+# ClojureScript ns test 1
+
+--Input
+(ns bar.core
+  (:require [foo.core :as foo :include-macros true]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "bar.core",
+  "requires": [
+    {
+      "as": "foo",
+      "includeMacros": true,
+      "symbol": "foo.core"
+    }
+  ]
+}
+--Expected
+
+# ClojureScript ns test 2
+
+--Input
+(ns cljs.ns-test
+  (:refer-clojure :exclude [+ for] :rename {mapv core-mapv})
+  (:require-macros [clojure.core :as lang :refer [when when-let] :rename {when always
+                                                                          when-let always-let}]
+                   [cljs.test :refer [deftest is]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "cljs.ns-test",
+  "referClojure": {
+    "exclude": [
+      {"symbol": "+"},
+      {"symbol": "for"}
+    ],
+    "rename": [
+      {
+        "fromSymbol": "mapv",
+        "toSymbol": "core-mapv"
+      }
+    ]
+  },
+  "requireMacros": [
+    {
+      "refer": [
+        {"symbol": "deftest"},
+        {"symbol": "is"}
+      ],
+      "symbol": "cljs.test"
+    },
+    {
+      "as": "lang",
+      "refer": [
+        {"symbol": "when"},
+        {"symbol": "when-let"}
+      ],
+      "rename": [
+        {
+          "fromSymbol": "when",
+          "toSymbol": "always"
+        },
+        {
+          "fromSymbol": "when-let",
+          "toSymbol": "always-let"
+        }
+      ],
+      "symbol": "clojure.core"
+    }
+  ]
+}
+--Expected
+
+# ClojureScript ns test 3
+
+--Input
+(ns cljs.spec.gen.alpha
+  (:refer-clojure :exclude [boolean cat hash-map list map not-empty set vector
+                            char double int keyword symbol string uuid delay shuffle])
+  (:require-macros [cljs.core :as c]
+                   [cljs.spec.gen.alpha :as gen :refer [dynaload lazy-combinators lazy-prims]])
+  (:require [cljs.core :as c])
+  (:import (goog Uri)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "cljs.spec.gen.alpha",
+  "imports": [
+    {
+      "classes": ["Uri"],
+      "package": "goog"
+    }
+  ],
+  "referClojure": {
+    "exclude": [
+      {"symbol": "boolean"},
+      {"symbol": "cat"},
+      {"symbol": "char"},
+      {"symbol": "delay"},
+      {"symbol": "double"},
+      {"symbol": "hash-map"},
+      {"symbol": "int"},
+      {"symbol": "keyword"},
+      {"symbol": "list"},
+      {"symbol": "map"},
+      {"symbol": "not-empty"},
+      {"symbol": "set"},
+      {"symbol": "shuffle"},
+      {"symbol": "string"},
+      {"symbol": "symbol"},
+      {"symbol": "uuid"},
+      {"symbol": "vector"}
+    ]
+  },
+  "requireMacros": [
+    {
+      "as": "c",
+      "symbol": "cljs.core"
+    },
+    {
+      "as": "gen",
+      "refer": [
+        {"symbol": "dynaload"},
+        {"symbol": "lazy-combinators"},
+        {"symbol": "lazy-prims"}
+      ],
+      "symbol": "cljs.spec.gen.alpha"
+    }
+  ],
+  "requires": [
+    {
+      "as": "c",
+      "symbol": "cljs.core"
+    }
+  ]
+}
+--Expected
+
+# sente example
+
+--Input
+(ns taoensso.sente
+  (:require
+    #?@(:clj  [[clojure.string :as str]
+               [clojure.core.async :as async]
+               [taoensso.encore :as enc]
+               [taoensso.timbre :as timbre]
+               [taoensso.sente.interfaces :as interfaces]]
+        :cljs [[clojure.string :as str]
+               [cljs.core.async :as async]
+               [taoensso.encore :as enc]
+               [taoensso.sente.interfaces :as interfaces]]))
+  #?(:cljs (:require-macros
+             [cljs.core.async.macros :as asyncm :refer (go go-loop)]
+             [taoensso.encore :as enc :refer (have? have have-in)])))
+--Input
+
+--Expected
+{
+  "nsSymbol": "taoensso.sente",
+  "requires": [
+    {
+      "as": "async",
+      "platform": ":cljs",
+      "symbol": "cljs.core.async"
+    },
+    {
+      "as": "async",
+      "platform": ":clj",
+      "symbol": "clojure.core.async"
+    },
+    {
+      "as": "str",
+      "platform": ":clj",
+      "symbol": "clojure.string"
+    },
+    {
+      "as": "str",
+      "platform": ":cljs",
+      "symbol": "clojure.string"
+    },
+    {
+      "as": "enc",
+      "platform": ":clj",
+      "symbol": "taoensso.encore"
+    },
+    {
+      "as": "enc",
+      "platform": ":cljs",
+      "symbol": "taoensso.encore"
+    },
+    {
+      "as": "interfaces",
+      "platform": ":clj",
+      "symbol": "taoensso.sente.interfaces"
+    },
+    {
+      "as": "interfaces",
+      "platform": ":cljs",
+      "symbol": "taoensso.sente.interfaces"
+    },
+    {
+      "as": "timbre",
+      "platform": ":clj",
+      "symbol": "taoensso.timbre"
+    }
+  ],
+  "requireMacros": [
+    {
+      "as": "asyncm",
+      "platform": ":cljs",
+      "refer": [
+        {
+          "symbol": "go",
+          "platform": ":cljs"
+        },
+        {
+          "symbol": "go-loop",
+          "platform": ":cljs"
+        }
+      ],
+      "symbol": "cljs.core.async.macros"
+    },
+    {
+      "as": "enc",
+      "platform": ":cljs",
+      "refer": [
+        {
+          "symbol": "have",
+          "platform": ":cljs"
+        },
+        {
+          "symbol": "have-in",
+          "platform": ":cljs"
+        },
+        {
+          "symbol": "have?",
+          "platform": ":cljs"
+        }
+      ],
+      "symbol": "taoensso.encore"
+    }
+  ]
+}
+--Expected
+
+# basic gen-class
+
+--Input
+(ns com.example.my-app
+  (:gen-class))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "isEmpty": true
+  }
+}
+--Expected
+
+# gen-class with reader conditional
+
+--Input
+(ns com.example.my-app
+  #?(:clj
+     (:gen-class)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "isEmpty": true,
+    "platform": ":clj"
+  }
+}
+--Expected
+
+# gen-class with reader conditional and comments
+
+--Input
+(ns com.example.my-app
+  #?(:clj
+  ;; zzz
+     (:gen-class)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "commentsAbove": [";; zzz"],
+    "isEmpty": true,
+    "platform": ":clj"
+  }
+}
+--Expected
+
+# gen-class with comments 1
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:gen-class)) ;; ccc
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "commentsAbove": [";; aaa", ";; bbb"],
+    "commentAfter": ";; ccc",
+    "isEmpty": true
+  },
+  "commentOutsideNsForm": ";; ccc"
+}
+--Expected
+
+# gen-class with comments 2
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:gen-class) ;; ccc
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "commentsAbove": [";; aaa", ";; bbb"],
+    "commentAfter": ";; ccc",
+    "isEmpty": true
+  }
+}
+--Expected
+
+# gen-class with simple values
+
+--Input
+(ns com.example.my-app
+  (:gen-class
+    :name name2
+    :extends java.lang.RuntimeException
+    :init init2
+    :post-init jjj
+    :main true
+    :factory fff
+    :state state2
+    :prefix "zzz-"
+    :impl-ns iii
+    :load-impl-ns false))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "isEmpty": false,
+    "name": {
+      "value": "name2"
+    },
+    "extends": {
+      "value": "java.lang.RuntimeException"
+    },
+    "init": {
+      "value": "init2"
+    },
+    "post-init": {
+      "value": "jjj"
+    },
+    "main": {
+      "value": true
+    },
+    "factory": {
+      "value": "fff"
+    },
+    "state": {
+      "value": "state2"
+    },
+    "prefix": {
+      "value": "\"zzz-\""
+    },
+    "impl-ns": {
+      "value": "iii"
+    },
+    "load-impl-ns": {
+      "value": false
+    }
+  }
+}
+--Expected
+
+# gen-class simple values with comments
+
+--Input
+(ns com.example.my-app
+  (:gen-class
+    ;; aaa
+    ;; bbb
+    :name name2 ;; ccc
+    ;; ddd
+    :main false) ;; eee
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "isEmpty": false,
+    "name": {
+      "commentsAbove": [
+        ";; aaa",
+        ";; bbb"
+      ],
+      "commentAfter": ";; ccc",
+      "value": "name2"
+    },
+    "main": {
+      "commentsAbove": [
+        ";; ddd"
+      ],
+      "commentAfter": ";; eee",
+      "value": false
+    }
+  }
+}
+--Expected
+
+# cuerdas.core example
+
+--Input
+(ns cuerdas.core
+  (:refer-clojure :exclude [contains? empty? repeat regexp?
+                            replace reverse chars keyword concat
+                            #?@(:clj [unquote format])])
+  #?(:cljs (:require-macros [cuerdas.core :refer [unsafe-concat nilv]])) ;; require-macros!
+  (:require [clojure.string :as str]
+            [clojure.set :refer [map-invert]]
+            [clojure.core :as c]
+
+            [clojure.walk :refer [stringify-keys]]
+            [cuerdas.regexp :as rx]
+
+            #?(:cljs [goog.string :as gstr]) ;; ggg
+            #?(:cljs [cljs.reader :as edn] ;; cljs-edn
+               :clj  [clojure.edn :as edn])) ;; clj-edn
+  #?(:clj (:import (java.util List Locale) ;; lll
+                   (aaa.bbb Ddd Ccc)))) ;; aaa
+--Input
+
+--Expected
+{
+  "nsSymbol": "cuerdas.core",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "chars"
+      },
+      {
+        "symbol": "concat"
+      },
+      {
+        "symbol": "contains?"
+      },
+      {
+        "symbol": "empty?"
+      },
+      {
+        "symbol": "format",
+        "platform": ":clj"
+      },
+      {
+        "symbol": "keyword"
+      },
+      {
+        "symbol": "regexp?"
+      },
+      {
+        "symbol": "repeat"
+      },
+      {
+        "symbol": "replace"
+      },
+      {
+        "symbol": "reverse"
+      },
+      {
+        "symbol": "unquote",
+        "platform": ":clj"
+      }
+    ]
+  },
+  "requireMacros": [
+    {
+      "symbol": "cuerdas.core",
+      "platform": ":cljs",
+      "refer": [
+        {
+          "symbol": "nilv",
+          "platform": ":cljs"
+        },
+        {
+          "symbol": "unsafe-concat",
+          "platform": ":cljs"
+        }
+      ],
+      "commentAfter": ";; require-macros!"
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "cljs.reader",
+      "platform": ":cljs",
+      "as": "edn",
+      "commentAfter": ";; cljs-edn"
+    },
+    {
+      "symbol": "clojure.core",
+      "as": "c"
+    },
+    {
+      "symbol": "clojure.edn",
+      "platform": ":clj",
+      "as": "edn",
+      "commentAfter": ";; clj-edn"
+    },
+    {
+      "symbol": "clojure.set",
+      "refer": [{"symbol": "map-invert"}]
+    },
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    },
+    {
+      "symbol": "clojure.walk",
+      "refer": [{"symbol": "stringify-keys"}]
+    },
+    {
+      "symbol": "cuerdas.regexp",
+      "as": "rx"
+    },
+    {
+      "symbol": "goog.string",
+      "platform": ":cljs",
+      "as": "gstr",
+      "commentAfter": ";; ggg"
+    }
+  ],
+  "commentOutsideNsForm": ";; aaa",
+  "imports": [
+    {
+      "package": "aaa.bbb",
+      "classes": [
+        "Ccc",
+        "Ddd"
+      ],
+      "commentAfter": ";; aaa",
+      "platform": ":clj"
+    },
+    {
+      "package": "java.util",
+      "classes": [
+        "List",
+        "Locale"
+      ],
+      "commentAfter": ";; lll",
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# namespace docstring 2
+
+--Input
+(ns com.oakmac.chessboard2.util.base58)
+
+(def base58-chars
+  "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+
+(def default-length 12)
+
+(defn random-base58
+  "returns a random base58 string"
+  ([]
+   (random-base58 default-length))
+  ([len]
+   (apply str (take len (repeatedly #(rand-nth base58-chars))))))
+
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.oakmac.chessboard2.util.base58"
+}
+--Expected
+
+# metabase example 1
+
+--Input
+(ns metabase.shared.util.i18n
+  (:require
+   ["ttag" :as ttag]
+   [clojure.string :as str])
+  (:require-macros
+   [metabase.shared.util.i18n]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "metabase.shared.util.i18n",
+  "requires": [
+    {
+      "symbol": "\"ttag\"",
+      "symbolIsString": true,
+      "as": "ttag"
+    },
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    }
+  ],
+  "requireMacros": [
+    {
+      "symbol": "metabase.shared.util.i18n"
+    }
+  ]
+}
+--Expected
+
+# reader macro comments
+
+--Input
+(ns com.example.my-app
+  (:require
+    ccc.ddd #_ #{"bugger"}
+    #_ {:alpha "alpha"
+        :bravo "bravo"}
+    [aaa.bbb]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "commentsAbove": ["#_ {:alpha \"alpha\"\n        :bravo \"bravo\"}"],
+      "symbol": "aaa.bbb"
+    },
+    {
+      "commentAfter": "#_ #{\"bugger\"}",
+      "symbol": "ccc.ddd"
+    }
+  ]
+}
+--Expected
+
+# comment above ns form 1
+
+--Input
+;; aaa
+(ns com.example.foo
+  "bar")
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.foo",
+  "docstring": "bar"
+}
+--Expected
+
+# comment above ns form 2
+
+--Input
+;; abc
+;; def
+
+(ns metabase.api.common
+  "Dynamic variables and utility functions/macros for writing API functions."
+  (:require
+    [clojure.set :as set]
+    [potemkin :as p]
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "metabase.api.common",
+  "docstring": "Dynamic variables and utility functions/macros for writing API functions.",
+  "requires": [
+    {
+      "as": "set",
+      "symbol": "clojure.set"
+    },
+    {
+      "as": "p",
+      "symbol": "potemkin"
+    }
+  ]
+}
+--Expected
+
+# :refer :all with :exclude
+
+--Input
+(ns com.example.my-app
+  (:require
+    [incanter.core :refer :all :exclude [abs]])
+    )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "exclude": [{"symbol": "abs"}],
+      "refer": "all",
+      "symbol": "incanter.core"
+    }
+  ]
+}
+--Expected
+
+# comments after ns form
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/75
+
+--Input
+(ns foo.bar
+  (:require baz.core
+            ))
+
+(comment
+  ;; foo
+  )
+
+
+(comment
+  ;; bar
+  )
+
+(comment
+  ;; baz
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo.bar",
+  "requires": [
+    {
+      "symbol": "baz.core"
+    }
+  ]
+}
+--Expected
+
+# :refer :as-alias
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/69
+
+--Input
+(ns com.example.my-app
+  (require [foo :as-alias bar]
+[aaa :as-alias bbb :exclude [yyy ttt]]
+  )
+)
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "asAlias": "bbb",
+      "exclude": [
+        {"symbol": "ttt"},
+        {"symbol": "yyy"}
+      ],
+      "symbol": "aaa"
+    },
+    {
+      "asAlias": "bar",
+      "symbol": "foo"
+    }
+  ]
+}
+--Expected
+
+# refer-clojure rename with comment and reader conditional
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/48
+
+--Input
+(ns com.example.my-app
+  (:refer-clojure
+    :rename  {get core-get
+              #?@(:clj [conj core-conj])}))
+                  ;:cljs [conj core-conj2])}))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "rename": [
+      {
+        "fromSymbol": "conj",
+        "toSymbol": "core-conj",
+        "platform": ":clj"
+      },
+      {
+        "fromSymbol": "get",
+        "toSymbol": "core-get"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #111 - comments above :require-macros
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/111
+
+--Input
+(ns com.example.my-app
+  ;; comment1
+  #_{:clj-kondo/ignore [:unused-referred-var]}
+  (:require-macros [other.ns :refer [one two]])
+  (:require
+    [aaa :as bbb]
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requireMacrosCommentsAbove": [
+    ";; comment1",
+    "#_{:clj-kondo/ignore [:unused-referred-var]}"
+  ],
+  "requireMacros": [
+    {
+      "refer": [
+        {
+          "symbol": "one"
+        },
+        {
+          "symbol": "two"
+        }
+      ],
+      "symbol": "other.ns"
+    }
+  ],
+  "requires": [
+    {
+      "as": "bbb",
+      "symbol": "aaa"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #112 - extra options in JS requires
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/112
+
+--Input
+(ns com.example.my-app
+  (:require
+    ["@foo/bar" :rename {Charlie Delta Alpha Bravo }]
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "\"@foo/bar\"",
+      "symbolIsString": true,
+      "rename": [
+        {
+          "fromSymbol": "Alpha",
+          "toSymbol": "Bravo"
+        },
+        {
+          "fromSymbol": "Charlie",
+          "toSymbol": "Delta"
+        }
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #114 - refer-clojure with reader conditional
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/114
+
+--Input
+(ns com.example.my-app
+#?(:clj
+   (:refer-clojure :exclude [aaa ccc bbb])
+
+   :cljs
+   (:refer-clojure :exclude [ddd aaa])
+   ,))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "exclude": [
+      {"symbol": "aaa", "platform": ":clj"},
+      {"symbol": "aaa", "platform": ":cljs"},
+      {"symbol": "bbb", "platform": ":clj"},
+      {"symbol": "ccc", "platform": ":clj"},
+      {"symbol": "ddd", "platform": ":cljs"}
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #55 - metadata in ns 1
+
+--Input
+(ns ^{:deprecated "0.1.0", :aaa "aaa"} com.example.my-app
+  (:require [clojure.string :as str]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "nsMetadata": [
+    {"key": ":deprecated", "value": "\"0.1.0\""},
+    {"key": ":aaa", "value": "\"aaa\""}
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    }
+  ]
+}
+--Expected
+
+> https://stackoverflow.com/questions/18861584/clojure-namespace-metadata
+> https://grep.app/search?q=ns%20%5E%7B%3A&filter[lang][0]=Clojure
+
+# GitHub Issue #55 - metadata in ns 2
+
+--Input
+(ns ^:foo/bar com.example.my-app)
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "nsMetadata": [
+    {"key": ":foo/bar", "value": "true"}
+  ]
+}
+--Expected
+
+# GitHub Issue #55 - metadata in ns 3
+
+--Input
+(ns com.example.my-app {:foo 45, :bar [:a :b :c {}]})
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "nsMetadata": [
+    {"key": ":foo", "value": "45"},
+    {"key": ":bar", "value": "[:a :b :c {}]"}
+  ]
+}
+--Expected
+
+# GitHub Issue #55 - metadata in ns 4
+
+> https://github.com/clojure/clojurescript/blob/b7ede4bce3e273ab85155fdd8463c291a6f81d43/src/test/clojure/cljs/analyzer_tests.clj#L249-L277
+
+--Input
+(ns ^{:foo bar} weeble.ns {:foo baz}
+  (:require [clojure.string]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "weeble.ns",
+  "nsMetadata": [
+    {"key": ":foo", "value": "baz"}
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #126 - metadata in ns 8
+
+--Input
+(ns ^{:added "0.12.0"} com.example.my-app
+  "some docstring!"
+  (:require [clojure.string]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "docstring": "some docstring!",
+  "nsMetadata": [
+    {"key": ":added", "value": "\"0.12.0\""}
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #126 - metadata in ns 9
+
+--Input
+(ns com.example.my-app
+  "some docstring!"
+  {:added "0.12.0"}
+  (:require
+    [clojure.string]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "docstring": "some docstring!",
+  "nsMetadata": [
+    {"key": ":added", "value": "\"0.12.0\""}
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string"
+    }
+  ]
+}
+--Expected
+
+# cljs.analyzer example
+
+> https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/analyzer.cljc
+
+--Input
+(ns cljs.analyzer
+  #?(:clj  (:refer-clojure :exclude [ensure macroexpand-1])
+     :cljs (:refer-clojure :exclude [ensure js-reserved macroexpand-1 ns-interns]))
+  #?(:cljs (:require-macros [cljs.analyzer.macros
+                             :refer [allowing-redef disallowing-ns* disallowing-recur
+                                     no-warn with-warning-handlers wrapping-errors]]
+             [cljs.env.macros :refer [ensure]]))
+  #?(:clj  (:require [cljs.analyzer.impl :as impl]
+                     [cljs.analyzer.impl.namespaces :as nses]
+                     [cljs.analyzer.passes.and-or :as and-or]
+                     [cljs.env :as env :refer [ensure]]
+                     [cljs.externs :as externs]
+                     [cljs.js-deps :as deps]
+                     [cljs.tagged-literals :as tags]
+                     [cljs.util :as util :refer [ns->relpath topo-sort]]
+                     [clojure.edn :as edn]
+                     [clojure.java.io :as io]
+                     [clojure.set :as set]
+                     [clojure.string :as string]
+                     [cljs.vendor.clojure.tools.reader :as reader]
+                     [cljs.vendor.clojure.tools.reader.reader-types :as readers])
+     :cljs (:require [cljs.analyzer.impl :as impl]
+                     [cljs.analyzer.impl.namespaces :as nses]
+                     [cljs.analyzer.passes.and-or :as and-or]
+                     [cljs.env :as env]
+                     [cljs.reader :as edn]
+                     [cljs.tagged-literals :as tags]
+                     [cljs.tools.reader :as reader]
+                     [cljs.tools.reader.reader-types :as readers]
+                     [clojure.set :as set]
+                     [clojure.string :as string]
+                     [goog.string :as gstring]))
+  #?(:clj (:import [cljs.tagged_literals JSValue]
+                   [clojure.lang Namespace Var LazySeq ArityException]
+                   [java.io File Reader PushbackReader]
+                   [java.lang Throwable]
+                   [java.net URL]
+                   [java.util.regex Pattern])))
+
+#?(:clj (set! *warn-on-reflection* true))
+
+;; User file-local compiler flags
+#?(:clj (def ^:dynamic *unchecked-if* false))
+#?(:clj (def ^:dynamic *unchecked-arrays* false))
+--Input
+
+--Expected
+{
+  "nsSymbol": "cljs.analyzer",
+  "referClojure": {
+    "exclude": [
+      { "symbol": "ensure","platform": ":clj" },
+      { "symbol": "ensure","platform": ":cljs" },
+      { "symbol": "js-reserved","platform": ":cljs" },
+      { "symbol": "macroexpand-1","platform": ":clj" },
+      { "symbol": "macroexpand-1","platform": ":cljs" },
+      { "symbol": "ns-interns","platform": ":cljs" }
+    ]
+  },
+  "requireMacros": [
+    {
+      "symbol": "cljs.analyzer.macros",
+      "platform": ":cljs",
+      "refer": [
+        { "symbol": "allowing-redef", "platform": ":cljs" },
+        { "symbol": "disallowing-ns*", "platform": ":cljs" },
+        { "symbol": "disallowing-recur", "platform": ":cljs" },
+        { "symbol": "no-warn", "platform": ":cljs" },
+        { "symbol": "with-warning-handlers", "platform": ":cljs" },
+        { "symbol": "wrapping-errors", "platform": ":cljs" }
+      ]
+    },
+    {
+      "symbol": "cljs.env.macros",
+      "platform": ":cljs",
+      "refer": [
+        { "symbol": "ensure", "platform": ":cljs" }
+      ]
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "cljs.analyzer.impl",
+      "platform": ":clj",
+      "as": "impl"
+    },
+    {
+      "symbol": "cljs.analyzer.impl",
+      "platform": ":cljs",
+      "as": "impl"
+    },
+    {
+      "symbol": "cljs.analyzer.impl.namespaces",
+      "platform": ":clj",
+      "as": "nses"
+    },
+    {
+      "symbol": "cljs.analyzer.impl.namespaces",
+      "platform": ":cljs",
+      "as": "nses"
+    },
+    {
+      "symbol": "cljs.analyzer.passes.and-or",
+      "platform": ":clj",
+      "as": "and-or"
+    },
+    {
+      "symbol": "cljs.analyzer.passes.and-or",
+      "platform": ":cljs",
+      "as": "and-or"
+    },
+    {
+      "symbol": "cljs.env",
+      "platform": ":clj",
+      "as": "env",
+      "refer": [
+        {
+          "symbol": "ensure"
+        }
+      ]
+    },
+    {
+      "symbol": "cljs.env",
+      "platform": ":cljs",
+      "as": "env"
+    },
+    {
+      "symbol": "cljs.externs",
+      "platform": ":clj",
+      "as": "externs"
+    },
+    {
+      "symbol": "cljs.js-deps",
+      "platform": ":clj",
+      "as": "deps"
+    },
+    {
+      "symbol": "cljs.reader",
+      "platform": ":cljs",
+      "as": "edn"
+    },
+    {
+      "symbol": "cljs.tagged-literals",
+      "platform": ":clj",
+      "as": "tags"
+    },
+    {
+      "symbol": "cljs.tagged-literals",
+      "platform": ":cljs",
+      "as": "tags"
+    },
+    {
+      "symbol": "cljs.tools.reader",
+      "platform": ":cljs",
+      "as": "reader"
+    },
+    {
+      "symbol": "cljs.tools.reader.reader-types",
+      "platform": ":cljs",
+      "as": "readers"
+    },
+    {
+      "symbol": "cljs.util",
+      "platform": ":clj",
+      "as": "util",
+      "refer": [
+        {
+          "symbol": "ns->relpath"
+        },
+        {
+          "symbol": "topo-sort"
+        }
+      ]
+    },
+    {
+      "symbol": "cljs.vendor.clojure.tools.reader",
+      "platform": ":clj",
+      "as": "reader"
+    },
+    {
+      "symbol": "cljs.vendor.clojure.tools.reader.reader-types",
+      "platform": ":clj",
+      "as": "readers"
+    },
+    {
+      "symbol": "clojure.edn",
+      "platform": ":clj",
+      "as": "edn"
+    },
+    {
+      "symbol": "clojure.java.io",
+      "platform": ":clj",
+      "as": "io"
+    },
+    {
+      "symbol": "clojure.set",
+      "platform": ":clj",
+      "as": "set"
+    },
+    {
+      "symbol": "clojure.set",
+      "platform": ":cljs",
+      "as": "set"
+    },
+    {
+      "symbol": "clojure.string",
+      "platform": ":clj",
+      "as": "string"
+    },
+    {
+      "symbol": "clojure.string",
+      "platform": ":cljs",
+      "as": "string"
+    },
+    {
+      "symbol": "goog.string",
+      "platform": ":cljs",
+      "as": "gstring"
+    }
+  ],
+  "imports": [
+    {
+      "package": "cljs.tagged_literals",
+      "classes": [
+        "JSValue"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "clojure.lang",
+      "classes": [
+        "ArityException",
+        "LazySeq",
+        "Namespace",
+        "Var"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.io",
+      "classes": [
+        "File",
+        "PushbackReader",
+        "Reader"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.lang",
+      "classes": [
+        "Throwable"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.net",
+      "classes": [
+        "URL"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.util.regex",
+      "classes": [
+        "Pattern"
+      ],
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #135 - portal.runtime.cson before
+
+--Input
+(ns ^:no-doc portal.runtime.cson
+  "Clojure/Script Object Notation"
+  (:refer-clojure :exclude [read])
+  #?(:clj  (:require [portal.runtime.json-buffer :as json])
+     :cljr (:require [portal.runtime.json-buffer :as json])
+     :joyride
+     (:require
+      [portal.runtime.json-buffer :as json]
+      [portal.runtime.macros :as m])
+     :org.babashka/nbb
+     (:require
+      [portal.runtime.json-buffer :as json]
+      [portal.runtime.macros :as m])
+     :cljs
+     (:require
+      [goog.crypt.base64 :as Base64]
+      [portal.runtime.json-buffer :as json]
+      [portal.runtime.macros :as m]))
+  #?(:clj  (:import [java.net URL]
+                    [java.util Base64 Date UUID])
+     :joyride (:import)
+     :org.babashka/nbb (:import)
+     :cljs (:import [goog.math Long])))
+
+(defprotocol ToJson (-to-json [value buffer]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "portal.runtime.cson",
+  "nsMetadata": [
+    {
+      "key": ":no-doc",
+      "value": "true"
+    }
+  ],
+  "docstring": "Clojure/Script Object Notation",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "read"
+      }
+    ]
+  },
+  "requires": [
+    {
+      "symbol": "goog.crypt.base64",
+      "platform": ":cljs",
+      "as": "Base64"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":clj",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":cljr",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":cljs",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":joyride",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":org.babashka/nbb",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":cljs",
+      "as": "m"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":joyride",
+      "as": "m"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":org.babashka/nbb",
+      "as": "m"
+    }
+  ],
+  "imports": [
+    {
+      "package": "goog.math",
+      "classes": [
+        "Long"
+      ],
+      "platform": ":cljs"
+    },
+    {
+      "package": "java.net",
+      "classes": [
+        "URL"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.util",
+      "classes": [
+        "Base64",
+        "Date",
+        "UUID"
+      ],
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #135 - portal.runtime.cson after
+
+--Input
+(ns portal.runtime.cson
+  "Clojure/Script Object Notation"
+  {:no-doc true}
+  (:refer-clojure :exclude [read])
+  (:require
+   #?@(:clj
+       [[portal.runtime.json-buffer :as json]]
+
+       :cljr
+       [[portal.runtime.json-buffer :as json]]
+
+       :cljs
+       [[goog.crypt.base64 :as Base64]
+        [portal.runtime.json-buffer :as json]
+        [portal.runtime.macros :as m]]
+
+       :joyride
+       [[portal.runtime.json-buffer :as json]
+        [portal.runtime.macros :as m]]
+
+       :org.babashka/nbb
+       [[portal.runtime.json-buffer :as json]
+        [portal.runtime.macros :as m]]))
+  (:import
+   #?@(:clj
+       [(java.net URL)
+        (java.util Base64 Date UUID)]
+
+       :cljs
+       [(goog.math Long)])))
+
+(defprotocol ToJson (-to-json [value buffer]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "portal.runtime.cson",
+  "nsMetadata": [
+    {
+      "key": ":no-doc",
+      "value": "true"
+    }
+  ],
+  "docstring": "Clojure/Script Object Notation",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "read"
+      }
+    ]
+  },
+  "requires": [
+    {
+      "symbol": "goog.crypt.base64",
+      "platform": ":cljs",
+      "as": "Base64"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":clj",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":cljr",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":cljs",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":joyride",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.json-buffer",
+      "platform": ":org.babashka/nbb",
+      "as": "json"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":cljs",
+      "as": "m"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":joyride",
+      "as": "m"
+    },
+    {
+      "symbol": "portal.runtime.macros",
+      "platform": ":org.babashka/nbb",
+      "as": "m"
+    }
+  ],
+  "imports": [
+    {
+      "package": "goog.math",
+      "classes": [
+        "Long"
+      ],
+      "platform": ":cljs"
+    },
+    {
+      "package": "java.net",
+      "classes": [
+        "URL"
+      ],
+      "platform": ":clj"
+    },
+    {
+      "package": "java.util",
+      "classes": [
+        "Base64",
+        "Date",
+        "UUID"
+      ],
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #140 - :refer-clojure comments 1
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:refer-clojure :only [number? -> set]) ; ccc
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojureCommentsAbove": [
+    ";; aaa",
+    ";; bbb"
+  ],
+  "referClojureCommentAfterForm": "; ccc",
+  "referClojure": {
+    "only": [
+      {"symbol": "->"},
+      {"symbol": "number?"},
+      {"symbol": "set"}
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #140 - :refer-clojure comments 2
+
+--Input
+(ns com.example.my-app
+  ;; aaa
+  ;; bbb
+  (:refer-clojure :only [number? -> set ; ccc
+  ]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojureCommentsAbove": [
+    ";; aaa",
+    ";; bbb"
+  ],
+  "referClojureCommentAfterForm": "; ccc",
+  "referClojure": {
+    "only": [
+      {"symbol": "->"},
+      {"symbol": "number?"},
+      {"symbol": "set"}
+    ]
+  }
+}
+--Expected
+
+# refer-clojure :rename with reader conditional
+
+--Input
+(ns com.example.my-app
+  ;; comment 1
+  ;; comment 2
+  (:refer-clojure
+    :rename {#?(:cljs [print core-print get g])}) ;; comment 3
+  )
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojureCommentsAbove": [
+    ";; comment 1",
+    ";; comment 2"
+  ],
+  "referClojureCommentAfterForm": ";; comment 3",
+  "referClojure": {
+    "rename": [
+      {
+        "fromSymbol": "get",
+        "toSymbol": "g",
+        "platform": ":cljs"
+      },
+      {
+        "fromSymbol": "print",
+        "toSymbol": "core-print",
+        "platform": ":cljs"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #142 - cljs.math reader conditional example
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/142
+
+--Input
+(ns ^{:doc "ClojureScript wrapper functions for math operations"
+      :author "Paula Gearon" }
+    cljs.math
+  ;; create space to load this in Clojure for testing
+  #?@(:clj ((:refer-clojure :exclude [aset aget + unsigned-bit-shift-right bit-shift-right bit-shift-left])
+            (:require [js :refer [aset aget +]])
+            (:import [js ArrayBuffer Uint8Array Uint32Array Float64Array]))))
+
+#?(:clj (def number Double))
+--Input
+
+--Expected
+{
+  "nsSymbol": "cljs.math",
+  "nsMetadata": [
+    {
+      "key": ":doc",
+      "value": "\"ClojureScript wrapper functions for math operations\""
+    },
+    {
+      "key": ":author",
+      "value": "\"Paula Gearon\""
+    }
+  ],
+  "referClojureCommentsAbove": [
+    ";; create space to load this in Clojure for testing"
+  ],
+  "referClojure": {
+    "exclude": [
+      { "symbol": "+", "platform": ":clj" },
+      { "symbol": "aget", "platform": ":clj" },
+      { "symbol": "aset", "platform": ":clj" },
+      { "symbol": "bit-shift-left", "platform": ":clj" },
+      { "symbol": "bit-shift-right", "platform": ":clj" },
+      { "symbol": "unsigned-bit-shift-right", "platform": ":clj" }
+    ]
+  },
+  "requires": [
+    {
+      "symbol": "js",
+      "refer": [
+        {"symbol": "+"},
+        {"symbol": "aget"},
+        {"symbol": "aset"}
+      ],
+      "platform": ":clj"
+    }
+  ],
+  "imports": [
+    {
+      "package": "js",
+      "classes": ["ArrayBuffer", "Float64Array", "Uint32Array", "Uint8Array"],
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #158 - ClojureScript require default
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/158
+
+--Input
+(ns com.example.my-app
+  (:require
+       ["react-dropzone" :default Dropzone]
+       ["react-select" :default Select]
+       ["react-select/creatable" :default CreatableSelect]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "\"react-dropzone\"",
+      "symbolIsString": true,
+      "default": "Dropzone"
+    },
+    {
+      "symbol": "\"react-select\"",
+      "symbolIsString": true,
+      "default": "Select"
+    },
+    {
+      "symbol": "\"react-select/creatable\"",
+      "symbolIsString": true,
+      "default": "CreatableSelect"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #166 - :require :refer :all bug 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/166
+
+--Input
+(ns com.example.my-app
+  (:require [other :refer :all :rename {foo bar}]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "other",
+      "refer": "all",
+      "rename": [
+        {
+          "fromSymbol": "foo",
+          "toSymbol": "bar"
+        }
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #166 - :require :refer :all bug 2
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/166
+
+--Input
+(ns com.example.my-app
+  (:require [other :rename {foo bar} :refer :all]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "other",
+      "refer": "all",
+      "rename": [
+        {
+          "fromSymbol": "foo",
+          "toSymbol": "bar"
+        }
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #152 - :use in the ns form should error
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/152
+
+--Input
+(ns com.example.my-app
+  (:use com.example-my-app.util))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": "Standard Clojure Style does not support :use inside of the ns form. Please refactor with :require as appropriate."
+}
+--Expected
+
+# GitHub Issue #152 - :use outside of the ns form should work normally
+
+--Input
+(ns com.example.my-app)
+
+  (use 'com.example.foo)
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app"
+}
+--Expected
+
+# GitHub Issue #152 - use symbol inside the ns form is ok
+
+--Input
+(ns com.example.my-app
+  (:require
+    [com.example.my-app.util :refer [use]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "com.example.my-app.util",
+      "refer": [{"symbol": "use"}]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #178 - no ns form
+
+--Input
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Input
+
+--Expected
+{
+  "nsSymbol": null
+}
+--Expected
+
+
+# GitHub Issue #178 - with ns form
+
+--Input
+(ns com.example.my-app)
+
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app"
+}
+--Expected
+
+# GitHub Issue #181 - ns metadata hash map with quoted value
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/181
+
+--Input
+(ns com.example.my-app
+  {:clj-kondo/config '{:linters {:unresolved-symbol {:level :off}}}}
+  (:require [clojure.string :as str]))
+--Input
+
+--Expected
+ {
+  "nsSymbol": "com.example.my-app",
+  "nsMetadata": [
+    {
+      "key": ":clj-kondo/config",
+      "value": "'{:linters {:unresolved-symbol {:level :off}}}"
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue 184 - Bug: ns metadata tagged literal values printed without hash
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/184
+
+--Input
+(ns com.example.my-app
+  {:id #uuid "7f5f474f-1c76-4884-af80-8ebdcf5c9df3"}
+  (:require [clojure.string :as str]))
+--Input
+
+--Expected
+ {
+  "nsSymbol": "com.example.my-app",
+  "nsMetadata": [
+    {
+      "key": ":id",
+      "value": "#uuid \"7f5f474f-1c76-4884-af80-8ebdcf5c9df3\""
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #183 - handle all types of quoted ns metadata hash map values
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/183
+
+--Input
+(ns my.namespace
+  {:token 'token
+   :string '"string"
+   :parens '(parens)
+   :brackets '[brackets]
+   :braces '{:braces true}
+   :wrap ''wrap
+   :deep-wrap ''''''wrap
+   :meta '^:meta [1 2 3]
+   :tagged ' #tag [1 2 3]}
+  (:require [clojure.string :as str]))
+--Input
+
+--Expected
+ {
+  "nsSymbol": "my.namespace",
+  "nsMetadata": [
+    {
+      "key": ":token",
+      "value": "'token"
+    },
+    {
+      "key": ":string",
+      "value": "'\"string\""
+    },
+    {
+      "key": ":parens",
+      "value": "'(parens)"
+    },
+    {
+      "key": ":brackets",
+      "value": "'[brackets]"
+    },
+    {
+      "key": ":braces",
+      "value": "'{:braces true}"
+    },
+    {
+      "key": ":wrap",
+      "value": "''wrap"
+    },
+    {
+      "key": ":deep-wrap",
+      "value": "''''''wrap"
+    },
+    {
+      "key": ":meta",
+      "value": "'^:meta [1 2 3]"
+    },
+    {
+      "key": ":tagged",
+      "value": "' #tag [1 2 3]"
+    }
+  ],
+  "requires": [
+    {
+      "symbol": "clojure.string",
+      "as": "str"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #187 - :require with :refer and :rename
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/187
+
+--Input
+(ns com.example.my-app
+  (:require
+   [foo.bar :rename {ccc ddd, aaa bbb} :refer [zzz xxx yyy]]
+   [biz.baz :refer [iii jjj] :rename {ooo ppp qqq rrr}]
+   ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "biz.baz",
+      "refer": [
+        {"symbol": "iii"},
+        {"symbol": "jjj"}
+      ],
+      "rename": [
+        {
+          "fromSymbol": "ooo",
+          "toSymbol": "ppp"
+        },
+        {
+          "fromSymbol": "qqq",
+          "toSymbol": "rrr"
+        }
+      ]
+    },
+    {
+      "symbol": "foo.bar",
+      "refer": [
+        {"symbol": "xxx"},
+        {"symbol": "yyy"},
+        {"symbol": "zzz"}
+      ],
+      "rename": [
+        {
+          "fromSymbol": "aaa",
+          "toSymbol": "bbb"
+        },
+        {
+          "fromSymbol": "ccc",
+          "toSymbol": "ddd"
+        }
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #191 - expand nested prefix lists
+
+--Input
+(ns com.example.my-app
+  (:require
+   [com.example.my-app.foo
+    [bar :as bar]
+    [baz :refer [qux]]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "com.example.my-app.foo.bar",
+      "as": "bar"
+    },
+    {
+      "symbol": "com.example.my-app.foo.baz",
+      "refer": [
+        {"symbol": "qux"}
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #203 - default keyword with as
+
+--Input
+(ns com.example.my-app
+  (:require
+    ["foo-bar" :default Foobar :as fb]
+    ["bar-foo" :as bf :default Barfoo]
+    ))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "as": "bf",
+      "default": "Barfoo",
+      "symbol": "\"bar-foo\"",
+      "symbolIsString": true
+    },
+    {
+      "as": "fb",
+      "default": "Foobar",
+      "symbol": "\"foo-bar\"",
+      "symbolIsString": true
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #208 - implements
+
+--Input
+(ns com.example.my-app
+  (:gen-class
+   :implements [zap.zip.RockSock foo.bar.BizBang]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "genClass": {
+    "isEmpty": false,
+    "implements": {
+      "value": [
+        {"symbol": "foo.bar.BizBang"},
+        {"symbol": "zap.zip.RockSock"}
+      ]
+    }
+  }
+}
+--Expected
+
+# gen-class constructors with multiple signatures
+
+--Input
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :constructors {[java.lang.String] []
+                  [] []
+                  [String long] [String]}
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "name": {
+      "value": "foo.Bar"
+    },
+    "constructors": {
+      "value": [
+        {
+          "parameterTypes": ["java.lang.String"],
+          "superParameterTypes": []
+        },
+        {
+          "parameterTypes": [],
+          "superParameterTypes": []
+        },
+        {
+          "parameterTypes": ["String", "long"],
+          "superParameterTypes": ["String"]
+        }
+      ]
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# empty gen-class constructors
+
+--Input
+(ns foo (:gen-class :constructors {} :main false))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "constructors": {
+      "value": []
+    },
+    "main": {
+      "value": false
+    }
+  }
+}
+--Expected
+
+# comments on gen-class constructors
+
+--Input
+(ns foo
+  (:gen-class
+   ;; comment above
+   :constructors {[String] []
+                  [long] [long]} ; comment after
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "constructors": {
+      "commentsAbove": [";; comment above"],
+      "value": [
+        {
+          "parameterTypes": ["String"],
+          "superParameterTypes": []
+        },
+        {
+          "parameterTypes": ["long"],
+          "superParameterTypes": ["long"]
+        }
+      ],
+      "commentAfter": "; comment after"
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# gen-class constructors inside a reader conditional
+
+--Input
+(ns foo
+  #?(:clj
+     (:gen-class
+      :constructors {[String] []}
+      :main true)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "platform": ":clj",
+    "constructors": {
+      "value": [
+        {
+          "parameterTypes": ["String"],
+          "superParameterTypes": []
+        }
+      ]
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# gen-class methods with multiple signatures
+
+--Input
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :methods [[foo [String long] void]
+             [bar [] String]]
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "name": {
+      "value": "foo.Bar"
+    },
+    "methods": {
+      "value": [
+        {
+          "name": "foo",
+          "parameterTypes": ["String", "long"],
+          "returnType": "void"
+        },
+        {
+          "name": "bar",
+          "parameterTypes": [],
+          "returnType": "String"
+        }
+      ]
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# empty gen-class methods
+
+--Input
+(ns foo (:gen-class :methods [] :main false))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "methods": {
+      "value": []
+    },
+    "main": {
+      "value": false
+    }
+  }
+}
+--Expected
+
+# comments on gen-class methods
+
+--Input
+(ns foo
+  (:gen-class
+   ;; comment above
+   :methods [[foo [] void]
+             [bar [String] String]] ; comment after
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "methods": {
+      "commentsAbove": [";; comment above"],
+      "value": [
+        {
+          "name": "foo",
+          "parameterTypes": [],
+          "returnType": "void"
+        },
+        {
+          "name": "bar",
+          "parameterTypes": ["String"],
+          "returnType": "String"
+        }
+      ],
+      "commentAfter": "; comment after"
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# gen-class methods inside a reader conditional
+
+--Input
+(ns foo
+  #?(:clj
+     (:gen-class
+      :methods [[foo [] void]]
+      :main true)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "platform": ":clj",
+    "methods": {
+      "value": [
+        {
+          "name": "foo",
+          "parameterTypes": [],
+          "returnType": "void"
+        }
+      ]
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# gen-class methods rejects a non-vector entry
+
+--Input
+(ns foo (:gen-class :methods [foo]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods must be a vector of method vectors."
+}
+--Expected
+
+# gen-class methods rejects a missing return type
+
+--Input
+(ns foo (:gen-class :methods [[foo [String]]]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods entries must contain a name, parameter-types vector, and return type."
+}
+--Expected
+
+# gen-class methods requires a parameter vector
+
+--Input
+(ns foo (:gen-class :methods [[foo String void]]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods parameter types must be provided in a vector."
+}
+--Expected
+
+# gen-class methods rejects extra forms
+
+--Input
+(ns foo (:gen-class :methods [[foo [String] void extra]]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods entries must contain a name, parameter-types vector, and return type."
+}
+--Expected
+
+# gen-class methods rejects nested parameter forms
+
+--Input
+(ns foo (:gen-class :methods [[foo [[String]] void]]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods parameter types must be symbols inside a vector."
+}
+--Expected
+
+# gen-class methods preserves metadata
+
+--Input
+(ns foo
+  (:gen-class
+   :methods [[^{:static true} create [^Deprecated String] Object]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "methods": {
+      "value": [
+        {
+          "name": "^{:static true} create",
+          "parameterTypes": ["^Deprecated String"],
+          "returnType": "Object"
+        }
+      ]
+    }
+  }
+}
+--Expected
+
+# gen-class methods requires an outer vector
+
+--Input
+(ns foo (:gen-class :methods {}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :methods must be a vector of method vectors."
+}
+--Expected
+
+# parse gen-class exposes and exposes-methods
+
+--Input
+(ns foo
+  (:gen-class
+   :exposes {z-field {:set setZ :get getZ}
+             a-field {:get getA}
+             write-only {:set setWriteOnly}
+             noop {}}
+   :exposes-methods {z-method callSuperZ
+                     a-method callSuperA}
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "exposes": {
+      "value": [
+        {
+          "fieldName": "z-field",
+          "getter": "getZ",
+          "setter": "setZ"
+        },
+        {
+          "fieldName": "a-field",
+          "getter": "getA"
+        },
+        {
+          "fieldName": "write-only",
+          "setter": "setWriteOnly"
+        },
+        {
+          "fieldName": "noop"
+        }
+      ]
+    },
+    "exposes-methods": {
+      "value": [
+        {
+          "superMethodName": "z-method",
+          "exposedName": "callSuperZ"
+        },
+        {
+          "superMethodName": "a-method",
+          "exposedName": "callSuperA"
+        }
+      ]
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# parse empty gen-class exposes maps
+
+--Input
+(ns foo (:gen-class :exposes {} :exposes-methods {}))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "exposes": {
+      "value": []
+    },
+    "exposes-methods": {
+      "value": []
+    }
+  }
+}
+--Expected
+
+# parse comments on gen-class exposes values
+
+--Input
+(ns foo
+  (:gen-class
+   ;; exposed fields above
+   :exposes {value {:get getValue}} ; exposed fields after
+   ;; exposed methods above
+   :exposes-methods {close callSuperClose} ; exposed methods after
+   :main true))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "exposes": {
+      "commentsAbove": [";; exposed fields above"],
+      "value": [
+        {
+          "fieldName": "value",
+          "getter": "getValue"
+        }
+      ],
+      "commentAfter": "; exposed fields after"
+    },
+    "exposes-methods": {
+      "commentsAbove": [";; exposed methods above"],
+      "value": [
+        {
+          "superMethodName": "close",
+          "exposedName": "callSuperClose"
+        }
+      ],
+      "commentAfter": "; exposed methods after"
+    },
+    "main": {
+      "value": true
+    }
+  }
+}
+--Expected
+
+# parse gen-class exposes inside a reader conditional
+
+--Input
+(ns foo
+  #?(:clj
+     (:gen-class
+      :exposes {value {:get getValue}}
+      :exposes-methods {close callSuperClose})))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "platform": ":clj",
+    "exposes": {
+      "value": [
+        {
+          "fieldName": "value",
+          "getter": "getValue"
+        }
+      ]
+    },
+    "exposes-methods": {
+      "value": [
+        {
+          "superMethodName": "close",
+          "exposedName": "callSuperClose"
+        }
+      ]
+    }
+  }
+}
+--Expected
+
+# parse gen-class exposes preserves metadata
+
+--Input
+(ns foo
+  (:gen-class
+   :exposes {^String value {:get ^:deprecated readValue :set writeValue}}
+   :exposes-methods {^:deprecated close callSuperClose}))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "exposes": {
+      "value": [
+        {
+          "fieldName": "^String value",
+          "getter": "^:deprecated readValue",
+          "setter": "writeValue"
+        }
+      ]
+    },
+    "exposes-methods": {
+      "value": [
+        {
+          "superMethodName": "^:deprecated close",
+          "exposedName": "callSuperClose"
+        }
+      ]
+    }
+  }
+}
+--Expected
+
+# parse gen-class exposes requires an outer map
+
+--Input
+(ns foo (:gen-class :exposes []))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes must be a map of protected-field names to accessor maps."
+}
+--Expected
+
+# parse gen-class exposes requires field and accessor-map pairs
+
+--Input
+(ns foo (:gen-class :exposes {value}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes must contain protected-field and accessor-map pairs."
+}
+--Expected
+
+# parse gen-class exposes requires symbol field names
+
+--Input
+(ns foo (:gen-class :exposes {[value] {:get getValue}}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes protected field names must be symbols."
+}
+--Expected
+
+# parse gen-class exposes requires accessor maps
+
+--Input
+(ns foo (:gen-class :exposes {value getValue}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes field values must be maps containing :get and/or :set."
+}
+--Expected
+
+# parse gen-class exposes requires accessor pairs
+
+--Input
+(ns foo (:gen-class :exposes {value {:get}}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes accessor maps must contain keyword and method-name pairs."
+}
+--Expected
+
+# parse gen-class exposes rejects unknown accessor keys
+
+--Input
+(ns foo (:gen-class :exposes {value {:read getValue}}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes accessor keys must be :get or :set."
+}
+--Expected
+
+# parse gen-class exposes rejects repeated accessor keys
+
+--Input
+(ns foo (:gen-class :exposes {value {:get getValue :get readValue}}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes accessor maps cannot repeat :get or :set."
+}
+--Expected
+
+# parse gen-class exposes requires symbol accessor names
+
+--Input
+(ns foo (:gen-class :exposes {value {:get [getValue]}}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes accessor method names must be symbols."
+}
+--Expected
+
+# parse gen-class exposes-methods requires an outer map
+
+--Input
+(ns foo (:gen-class :exposes-methods []))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes-methods must be a map of superclass-method names to exposed names."
+}
+--Expected
+
+# parse gen-class exposes-methods requires name pairs
+
+--Input
+(ns foo (:gen-class :exposes-methods {close}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes-methods must contain superclass-method and exposed-name pairs."
+}
+--Expected
+
+# parse gen-class exposes-methods requires symbol names
+
+--Input
+(ns foo (:gen-class :exposes-methods {[close] callSuperClose}))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":gen-class :exposes-methods names must be symbols."
+}
+--Expected
+
+# parse all structured gen-class values together
+
+--Input
+(ns foo
+  (:gen-class
+   :constructors {[String] []}
+   :methods [[run [] void]]
+   :exposes {value {:get getValue}}
+   :exposes-methods {close callSuperClose}))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "constructors": {
+      "value": [
+        {
+          "parameterTypes": ["String"],
+          "superParameterTypes": []
+        }
+      ]
+    },
+    "methods": {
+      "value": [
+        {
+          "name": "run",
+          "parameterTypes": [],
+          "returnType": "void"
+        }
+      ]
+    },
+    "exposes": {
+      "value": [
+        {
+          "fieldName": "value",
+          "getter": "getValue"
+        }
+      ]
+    },
+    "exposes-methods": {
+      "value": [
+        {
+          "superMethodName": "close",
+          "exposedName": "callSuperClose"
+        }
+      ]
+    }
+  }
+}
+--Expected
+
+# GitHub Issue #235 - import comments with two reader conditional platforms
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/235
+> NOTE: the ";; after uri" comment is recorded both on the goog import and as commentOutsideNsForm
+
+--Input
+(ns com.example.my-app
+  ;; above import
+  (:import ;; after keyword
+    #?@(:clj
+        [
+         ;; above date
+         (java.util Date) ;; after date
+         ;; above file
+         (java.io File)] ;; after file
+        :cljs
+        [
+         ;; above uri
+         (goog Uri)]))) ;; after uri
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "importCommentsAbove": [";; above import"],
+  "importCommentAfter": ";; after keyword",
+  "commentOutsideNsForm": ";; after uri",
+  "imports": [
+    {
+      "package": "goog",
+      "classes": ["Uri"],
+      "commentsAbove": [";; above uri"],
+      "commentAfter": ";; after uri",
+      "platform": ":cljs"
+    },
+    {
+      "package": "java.io",
+      "classes": ["File"],
+      "commentsAbove": [";; above file"],
+      "commentAfter": ";; after file",
+      "platform": ":clj"
+    },
+    {
+      "package": "java.util",
+      "classes": ["Date"],
+      "commentsAbove": [";; above date"],
+      "commentAfter": ";; after date",
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #235 - import comments with non-platform and platform imports
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/235
+
+--Input
+(ns com.example.my-app
+  (:import
+    ;; above file
+    (java.io File) ;; after file
+    #?@(:clj
+        [
+         ;; above date
+         (java.util Date)]))) ;; after date
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "commentOutsideNsForm": ";; after date",
+  "imports": [
+    {
+      "package": "java.io",
+      "classes": ["File"],
+      "commentsAbove": [";; above file"],
+      "commentAfter": ";; after file"
+    },
+    {
+      "package": "java.util",
+      "classes": ["Date"],
+      "commentsAbove": [";; above date"],
+      "commentAfter": ";; after date",
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #235 - comment on the same line as the opening bracket of a platform import vector
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/235
+> NOTE: the ";; above date" and ";; above uri" comments are ignored by the parser
+> because they do not start their own line and are not on the line of an import
+
+--Input
+(ns com.example.my-app
+  (:import
+    #?@(:clj
+        [;; above date
+         (java.util Date)]
+        :cljs
+        [;; above uri
+         (goog Uri)])))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "imports": [
+    {
+      "package": "goog",
+      "classes": ["Uri"],
+      "platform": ":cljs"
+    },
+    {
+      "package": "java.util",
+      "classes": ["Date"],
+      "platform": ":clj"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #234 - single-symbol :import splits on the last dot regardless of case
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/234
+
+--Input
+(ns foo
+  (:import com.acme.lowercase_class java.util))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "imports": [
+    {
+      "package": "com.acme",
+      "classes": [
+        "lowercase_class"
+      ]
+    },
+    {
+      "package": "java",
+      "classes": [
+        "util"
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #234 - single-symbol :import of a class in the default package
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/234
+
+--Input
+(ns foo (:import Foo java.util.Date Bar))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "imports": [
+    {
+      "package": "",
+      "classes": [
+        "Bar"
+      ]
+    },
+    {
+      "package": "",
+      "classes": [
+        "Foo"
+      ]
+    },
+    {
+      "package": "java.util",
+      "classes": [
+        "Date"
+      ]
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #234 - keyword directly inside :import should error
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/234
+
+--Input
+(ns foo (:import :only x))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":import :only must be a class symbol."
+}
+--Expected
+
+# GitHub Issue #237 - :refer-clojure :only across reader conditional platforms
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/237
+
+--Input
+(ns com.example.my-app
+  #?(:clj (:refer-clojure :only [frequencies int partition])
+     :cljs (:refer-clojure :only [conj dissoc])))
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "referClojure": {
+    "only": [
+      {
+        "symbol": "conj",
+        "platform": ":cljs"
+      },
+      {
+        "symbol": "dissoc",
+        "platform": ":cljs"
+      },
+      {
+        "symbol": "frequencies",
+        "platform": ":clj"
+      },
+      {
+        "symbol": "int",
+        "platform": ":clj"
+      },
+      {
+        "symbol": "partition",
+        "platform": ":clj"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #237 - multiple discards and comments at the end of a line are merged
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/237
+
+--Input
+(ns com.example.my-app
+  (:require
+   [aaa.bbb] #_ 1 ;; c
+   [ccc.ddd])) #_ 2 #_ 3
+--Input
+
+--Expected
+{
+  "nsSymbol": "com.example.my-app",
+  "requires": [
+    {
+      "symbol": "aaa.bbb",
+      "commentAfter": "#_ 1 ;; c"
+    },
+    {
+      "symbol": "ccc.ddd",
+      "commentAfter": "#_ 2 #_ 3"
+    }
+  ],
+  "commentOutsideNsForm": "#_ 2 #_ 3"
+}
+--Expected
+
+# GitHub Issue #244 - discard and comment on the :require keyword line are requireCommentAfter
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/244
+
+--Input
+(ns foo
+  (:require #_ :c1 ;; c2
+    [c.d] [a.b]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requireCommentAfter": "#_ :c1 ;; c2",
+  "requires": [
+    {
+      "symbol": "a.b"
+    },
+    {
+      "symbol": "c.d"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #243 - discard and comment on the :require-macros keyword line are requireMacrosCommentAfter
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/243
+
+--Input
+(ns foo
+  (:require-macros #_ :c1 ;; c2
+    [m.b] [m.a]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requireMacrosCommentAfter": "#_ :c1 ;; c2",
+  "requireMacros": [
+    {
+      "symbol": "m.a"
+    },
+    {
+      "symbol": "m.b"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #245 - comment on the :refer-clojure keyword line is referClojureCommentAfter
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/245
+
+--Input
+(ns foo
+  (:refer-clojure #_ :c1 ;; c2
+    :exclude [get]) ;; c3
+  (:require [z.z]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "referClojureCommentAfter": "#_ :c1 ;; c2",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "get"
+      }
+    ]
+  },
+  "referClojureCommentAfterForm": ";; c3",
+  "requires": [
+    {
+      "symbol": "z.z"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #247 - comment after a :gen-class value on the keyword line belongs to the key
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/247
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar ;; c1
+              :extends Object)) ;; c2
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "name": {
+      "value": "foo.Bar",
+      "commentAfter": ";; c1"
+    },
+    "extends": {
+      "value": "Object",
+      "commentAfter": ";; c2"
+    }
+  },
+  "commentOutsideNsForm": ";; c2"
+}
+--Expected
+
+# GitHub Issue #241 - :refer-clojure with a different key on each platform
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/241
+
+--Input
+(ns foo
+  #?(:cljs (:refer-clojure :exclude [a])
+     :clj  (:refer-clojure :only [c d])))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "a",
+        "platform": ":cljs"
+      }
+    ],
+    "only": [
+      {
+        "symbol": "c",
+        "platform": ":clj"
+      },
+      {
+        "symbol": "d",
+        "platform": ":clj"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #241 - :refer-clojure with the same key on two platforms and a second key on one of them
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/241
+
+--Input
+(ns foo
+  #?(:cljs (:refer-clojure :exclude [a] :rename {x y})
+     :clj  (:refer-clojure :exclude [c d])))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "a",
+        "platform": ":cljs"
+      },
+      {
+        "symbol": "c",
+        "platform": ":clj"
+      },
+      {
+        "symbol": "d",
+        "platform": ":clj"
+      }
+    ],
+    "rename": [
+      {
+        "fromSymbol": "x",
+        "toSymbol": "y",
+        "platform": ":cljs"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #241 - :refer-clojure with multiple keys on a single platform
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/241
+
+--Input
+(ns foo
+  #?(:cljs (:refer-clojure :exclude [a] :rename {x y})))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "referClojure": {
+    "exclude": [
+      {
+        "symbol": "a",
+        "platform": ":cljs"
+      }
+    ],
+    "rename": [
+      {
+        "fromSymbol": "x",
+        "toSymbol": "y",
+        "platform": ":cljs"
+      }
+    ]
+  }
+}
+--Expected
+
+# GitHub Issue #225 - empty ns docstring
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo "" (:require [a.b]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "docstring": "",
+  "requires": [
+    {
+      "symbol": "a.b"
+    }
+  ]
+}
+--Expected
+
+# GitHub Issue #225 - empty string require
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/225
+
+--Input
+(ns foo (:require ["" :as x] ["" :refer [a]] [""]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requires": [
+    {
+      "symbol": "\"\"",
+      "symbolIsString": true,
+      "as": "x"
+    },
+    {
+      "symbol": "\"\"",
+      "symbolIsString": true,
+      "refer": [
+        {
+          "symbol": "a"
+        }
+      ]
+    },
+    {
+      "symbol": "\"\"",
+      "symbolIsString": true
+    }
+  ]
+}
+--Expected

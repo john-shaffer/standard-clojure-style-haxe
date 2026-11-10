@@ -1,0 +1,2572 @@
+# Simple Indentation
+
+--Input
+(def aaa
+(bbb))
+--Input
+
+--Expected
+(def aaa
+  (bbb))
+--Expected
+
+# Multiple Indentation Levels
+
+--Input
+(def (aaa)
+      (bbb
+(ccc)))
+--Input
+
+--Expected
+(def (aaa)
+  (bbb
+    (ccc)))
+--Expected
+
+# Reduce Indentation
+
+--Input
+  (aaa)
+(bbb)
+
+    (ccc)
+--Input
+
+--Expected
+(aaa)
+(bbb)
+
+(ccc)
+--Expected
+
+# Close Wrapping Parens
+
+--Input
+(def aaa
+(bbb)
+)
+--Input
+
+--Expected
+(def aaa
+  (bbb))
+--Expected
+
+# Close Wrapping Parens 2
+
+--Input
+(def aaa
+(bbb
+   {:a "a"
+}ccc
+)
+  )
+--Input
+
+--Expected
+(def aaa
+  (bbb
+    {:a "a"}
+    ccc))
+--Expected
+
+# Do not cross previous line last opener
+
+--Input
+(defn foo
+  ([a]
+    (foo a ""))
+  ([a b]
+    (str a "-" b)))
+--Input
+
+--Expected
+(defn foo
+  ([a]
+   (foo a ""))
+  ([a b]
+   (str a "-" b)))
+--Expected
+
+# jcd test case 1
+
+--Input
+{:this-is-a-key "fantastic"
+ :short         "sad"}
+--Input
+
+--Expected
+{:this-is-a-key "fantastic"
+ :short         "sad"}
+--Expected
+
+# jcd test case 2
+
+--Input
+[[1001    "FIFTY"    :column
+ 1002    "SEVENTY"  :row]
+ ]
+--Input
+
+--Expected
+[[1001    "FIFTY"    :column
+  1002    "SEVENTY"  :row]]
+--Expected
+
+# set alignment
+
+--Input
+#{"a"
+"b" "c"}
+--Input
+
+--Expected
+#{"a"
+  "b" "c"}
+--Expected
+
+# Preserve commas
+
+--Input
+{:a "a", :b "b"}
+--Input
+
+--Expected
+{:a "a", :b "b"}
+--Expected
+
+# Surrounding whitespace removed
+
+--Input
+( foo bar )
+[ 1 2 3 ]
+{  :x 1, :y 2 }
+--Input
+
+--Expected
+(foo bar)
+[1 2 3]
+{:x 1, :y 2}
+--Expected
+
+# Surrounding newlines removed 1
+
+--Input
+(
+  aaa
+)
+(
+bbb
+)
+(ccc
+)
+(ddd
+  )
+--Input
+
+--Expected
+(aaa)
+(bbb)
+(ccc)
+(ddd)
+--Expected
+
+# Surrounding newlines removed 2
+
+--Input
+[
+1 2 3
+]
+{
+:foo "bar"
+}
+--Input
+
+--Expected
+[1 2 3]
+{:foo "bar"}
+--Expected
+
+# Surrounding newlines removed 3
+> NOTE: this test case from cljfmt
+> I am not sure if this is the desired behavior we want? Need to give it a think
+
+--Input
+( let [x 3
+y 4]
+(+ (* x x
+)(* y y)
+))
+--Input
+
+--Expected
+(let [x 3
+      y 4]
+  (+ (* x x) (* y y)))
+--Expected
+
+# Inner indentation
+
+--Input
+(letfn [(foo [x]
+(* x x))
+(bar [x]
+(+ x x))]
+(foo 5))
+--Input
+
+--Expected
+(letfn [(foo [x]
+          (* x x))
+        (bar [x]
+          (+ x x))]
+  (foo 5))
+--Expected
+
+# Reader conditional standard syntax
+
+--Input
+#?(:clj foo
+:cljs bar)
+--Input
+
+--Expected
+#?(:clj foo
+   :cljs bar)
+--Expected
+
+# Reader conditional splicing syntax
+
+--Input
+#?@(:clj foo
+:cljs bar)
+--Input
+
+--Expected
+#?@(:clj foo
+    :cljs bar)
+--Expected
+
+# Add missing whitespace
+
+--Input
+(foo(bar baz)qux)
+(foo)bar(baz)
+(foo[bar]#{baz}{quz bang})
+--Input
+
+--Expected
+(foo (bar baz) qux)
+(foo) bar (baz)
+(foo [bar] #{baz} {quz bang})
+--Expected
+
+# Reader conditional whitespace
+
+--Input
+#?(:cljs(bar 1) :clj(foo 2))
+:break!
+#?@(:cljs[foo bar] :clj[baz quux])
+--Input
+
+--Expected
+#?(:cljs (bar 1) :clj (foo 2))
+:break!
+#?@(:cljs [foo bar] :clj [baz quux])
+--Expected
+
+# Remove consecutive blank lines 1
+
+--Input
+(foo)
+
+
+(bar)
+--Input
+
+--Expected
+(foo)
+
+(bar)
+--Expected
+
+# Remove consecutive blank lines 2
+
+--Input
+(foo)
+
+(bar
+
+
+  biz)
+
+
+
+(qux
+  baz)
+--Input
+
+--Expected
+(foo)
+
+(bar
+
+  biz)
+
+(qux
+  baz)
+--Expected
+
+# Rule 3 Indentation 1
+
+--Input
+;; https://github.com/clj-commons/formatter/issues/9#issuecomment-446167649
+
+;; rule 3 triggered
+(foo bar
+     baz
+  qux)
+
+;; rule 3 not triggered
+(foo bar
+ baz
+  qux)
+--Input
+
+--Expected
+;; https://github.com/clj-commons/formatter/issues/9#issuecomment-446167649
+
+;; rule 3 triggered
+(foo bar
+     baz
+     qux)
+
+;; rule 3 not triggered
+(foo bar
+  baz
+  qux)
+--Expected
+
+# Rule 3 Indentation 2
+
+--Input
+(foo bar
+     baz
+  qux)
+
+(zap bar baz
+         qux
+      wizzle
+                     gee)
+
+(yes tam
+      bif
+     bag
+     hop)
+--Input
+
+--Expected
+(foo bar
+     baz
+     qux)
+
+(zap bar baz
+         qux
+         wizzle
+         gee)
+
+(yes tam
+  bif
+  bag
+  hop)
+--Expected
+
+# Rule 3 Indentation 3
+
+--Input
+(foo bar
+     :baz
+  "qux")
+
+(zap bar baz
+         "qux"
+      :wizzle
+      ;; hello
+                     gee)
+--Input
+
+--Expected
+(foo bar
+     :baz
+     "qux")
+
+(zap bar baz
+         "qux"
+         :wizzle
+         ;; hello
+         gee)
+--Expected
+
+# Rule 3 Indentation 4
+
+--Input
+(foo (bar)
+     (baz))
+--Input
+
+--Expected
+(foo (bar)
+     (baz))
+--Expected
+
+# chessboard2 test case 1 - rule 3 indentation
+
+--Input
+(defn js-get-circles
+  "Returns the Circle Items on the board as either a JS Array (default), JS Object, or JS Map"
+  [board-state return-fmt]
+  (map->js-return-format (api/get-items-by-type board-state "CHESSBOARD_CIRCLE")
+                         (safe-lower-case return-fmt)))
+--Input
+
+--Expected
+(defn js-get-circles
+  "Returns the Circle Items on the board as either a JS Array (default), JS Object, or JS Map"
+  [board-state return-fmt]
+  (map->js-return-format (api/get-items-by-type board-state "CHESSBOARD_CIRCLE")
+                         (safe-lower-case return-fmt)))
+--Expected
+
+# docstring with newlines
+
+--Input
+(defn foo
+  "Clojure is a dynamic, general-purpose programming language,
+  combining the approachability and interactive development of
+  a scripting language with an efficient and robust infrastructure
+  for multithreaded programming."
+  [aaa bbb]
+  (bar {:aaa aaa, :bbb bbb}))
+--Input
+
+--Expected
+(defn foo
+  "Clojure is a dynamic, general-purpose programming language,
+  combining the approachability and interactive development of
+  a scripting language with an efficient and robust infrastructure
+  for multithreaded programming."
+  [aaa bbb]
+  (bar {:aaa aaa, :bbb bbb}))
+--Expected
+
+# rule 3 - threading macro example
+
+--Input
+(->> @foo
+     :bar
+     vals
+  (filter my-pred?))
+--Input
+
+--Expected
+(->> @foo
+     :bar
+     vals
+     (filter my-pred?))
+--Expected
+
+# chessboard2 test case 2 - rule 3 indentation
+
+--Input
+(defn get-circles-by-square
+  "Returns a Map of Circles with their square as the key."
+  [board-state]
+  (let [circles (->> @board-state
+                     :items
+                     vals
+                   (filter circle-item?))]
+    (zipmap (map :square circles) circles)))
+--Input
+
+--Expected
+(defn get-circles-by-square
+  "Returns a Map of Circles with their square as the key."
+  [board-state]
+  (let [circles (->> @board-state
+                     :items
+                     vals
+                     (filter circle-item?))]
+    (zipmap (map :square circles) circles)))
+--Expected
+
+# chessboard2 test case 3
+
+--Input
+(js-obj
+  "foo" bar
+  "biz" #() ;; aaa
+  "baz" nil )
+--Input
+
+--Expected
+(js-obj
+  "foo" bar
+  "biz" #() ;; aaa
+  "baz" nil)
+--Expected
+
+# chessboard2 test case 4
+
+> comments that are aligned with the form on the line above them should stay that way
+
+--Input
+(defn toggle-coordinates!
+  [board-state]
+  (swap! board-state update :show-coords? not))
+  ; (if (:show-notation? @board-state)
+  ;   (hide-coordinates! board-state)
+  ;   (show-coordinates! board-state)))
+--Input
+
+--Expected
+(defn toggle-coordinates!
+  [board-state]
+  (swap! board-state update :show-coords? not))
+  ; (if (:show-notation? @board-state)
+  ;   (hide-coordinates! board-state)
+  ;   (show-coordinates! board-state)))
+--Expected
+
+# comment alignment 1
+
+> comments that are aligned with the form on the line above them should stay that way
+
+--Input
+(foo bar
+  baz
+  biz)
+  ; aaa
+  ; bbb
+--Input
+
+--Expected
+(foo bar
+  baz
+  biz)
+  ; aaa
+  ; bbb
+--Expected
+
+# comment alignment 2
+
+> comments that seem to be part of the form should align with the form
+
+--Input
+(foo bar
+     baz
+  ;; aaa
+  biz)
+--Input
+
+--Expected
+(foo bar
+     baz
+     ;; aaa
+     biz)
+--Expected
+
+# comment alignment 3
+
+--Input
+(def default-add-piece-config
+  {:animate? true})
+   ;; TODO: onAnimationComplete callback here
+
+(defn my-func []
+   (+ 2 4))
+;; something!
+--Input
+
+--Expected
+(def default-add-piece-config
+  {:animate? true})
+   ;; TODO: onAnimationComplete callback here
+
+(defn my-func []
+  (+ 2 4))
+;; something!
+--Expected
+
+# comment alignment 4
+
+--Input
+(wizzle quizzle
+        fizzle
+            sizzle
+            ;; twizzle
+          gizzle)
+          ;; shmizzle
+--Input
+
+--Expected
+(wizzle quizzle
+        fizzle
+        sizzle
+        ;; twizzle
+        gizzle)
+        ;; shmizzle
+--Expected
+
+# comment alignment 5
+
+--Input
+(aaa
+ bbb)
+ ;; ccc
+--Input
+
+--Expected
+(aaa
+  bbb)
+  ;; ccc
+--Expected
+
+# whitespace before comment lines 1
+
+> NOTE: is "gobble gobble" correctly aligned in this test case?
+> Do we allow a comment to align to the first symbol after an opener? Before any spaces?
+
+--Input
+(aaa bbb
+  (ccc))
+   ;; gobble gobble
+
+    ;; aaa
+      ;; bbb
+--Input
+
+--Expected
+(aaa bbb
+  (ccc))
+   ;; gobble gobble
+
+    ;; aaa
+      ;; bbb
+--Expected
+
+# whitespace before comment lines 2
+
+--Input
+(aaa bbb
+  (ccc
+   ;; gobble gobble
+    (ddd eee
+         fff)
+      ))
+      ;; aaa
+      ;; bbb
+--Input
+
+--Expected
+(aaa bbb
+  (ccc
+    ;; gobble gobble
+    (ddd eee
+         fff)))
+      ;; aaa
+      ;; bbb
+--Expected
+
+# whitespace before comment lines 3
+
+--Input
+(defn zomg!
+  "I am a function docstring."
+  [some-map]
+  (let [{:keys [x y]} some-map]
+    ;; gobble gobble
+    (when-not (even? x)
+      (let [a "a"]
+        ;; banana
+        (foo bar :alpha "alpha"
+                 :bravo "bravo")
+        ))))
+        ;; aaa
+        ;; bbb
+--Input
+
+--Expected
+(defn zomg!
+  "I am a function docstring."
+  [some-map]
+  (let [{:keys [x y]} some-map]
+    ;; gobble gobble
+    (when-not (even? x)
+      (let [a "a"]
+        ;; banana
+        (foo bar :alpha "alpha"
+                 :bravo "bravo")))))
+        ;; aaa
+        ;; bbb
+--Expected
+
+# nested rule 3 - example 1
+
+--Input
+(foo (bar biz
+        baz)
+     zzz)
+--Input
+
+--Expected
+(foo (bar biz
+       baz)
+     zzz)
+--Expected
+
+# nested rule 3 - example 2
+
+--Input
+  (foo (bar biz
+            (fn []
+              (ccc))
+          )
+      zzz)
+--Input
+
+--Expected
+(foo (bar biz
+          (fn []
+            (ccc)))
+  zzz)
+--Expected
+
+# nested rule 3 with comments - example 1
+
+--Input
+   (foo (bar biz
+           baz)
+        zzz)
+        ;; aaa
+        ;; bbb
+--Input
+
+--Expected
+(foo (bar biz
+       baz)
+     zzz)
+     ;; aaa
+     ;; bbb
+--Expected
+
+# chessboard2 test case 5 - rule 3 comment alignment
+
+--Input
+(defn on-touch-start
+  "This function fires on every 'touchstart' event inside the root DOM element"
+  [board-state js-evt]
+  ;; prevent "double-tap to zoom"
+  (dom-util/safe-prevent-default js-evt)
+  (let [{:keys [draggable onTouchSquare orientation position
+                square->square-ids touchDraggable touchMove]}
+        @board-state
+        js-first-touch (aget (gobj/get js-evt "touches") 0)
+        clientX (gobj/get js-first-touch "clientX")
+        clientY (gobj/get js-first-touch "clientY")
+
+        square (xy->square clientX clientY square->square-ids)
+
+        _ (when flags/runtime-checks?
+            (when-not (valid-square? square)
+              (error-log "Invalid square in on-touch-start:" square)))
+
+        ;; NOTE: piece may be nil if there is no piece on the square they touched
+        piece (get position square)
+
+        ;; call their onTouchSquare function if provided
+        on-touchsquare-result (when (fn? onTouchSquare)
+                                (let [js-board-info (js-obj "orientation" orientation
+                                                            "position" (clj->js position))]
+                                                            ;; FIXME: add square, piece here
+                                                            ;; what else?
+                                  (onTouchSquare square piece js-board-info)))]
+
+    ;; begin dragging if configured
+    (when (and piece
+               (or (true? draggable) (true? touchDraggable)))
+      (begin-dragging! board-state square piece clientX clientY))
+
+    ;; highlight the square and queue a move if touchmove is enabled
+    (when (and (true? touchMove)
+               (not (false? on-touchsquare-result))
+               piece))
+      ;; FIXME:
+      ;; - highlight the square here?
+      ;; - or should this be their responsibility?
+      ;; queue their touchmove
+      ; (swap! board-state assoc :touch-move-queue1 {:piece piece, :square square}))
+
+    ;; return null
+    nil))
+--Input
+
+--Expected
+(defn on-touch-start
+  "This function fires on every 'touchstart' event inside the root DOM element"
+  [board-state js-evt]
+  ;; prevent "double-tap to zoom"
+  (dom-util/safe-prevent-default js-evt)
+  (let [{:keys [draggable onTouchSquare orientation position
+                square->square-ids touchDraggable touchMove]}
+        @board-state
+        js-first-touch (aget (gobj/get js-evt "touches") 0)
+        clientX (gobj/get js-first-touch "clientX")
+        clientY (gobj/get js-first-touch "clientY")
+
+        square (xy->square clientX clientY square->square-ids)
+
+        _ (when flags/runtime-checks?
+            (when-not (valid-square? square)
+              (error-log "Invalid square in on-touch-start:" square)))
+
+        ;; NOTE: piece may be nil if there is no piece on the square they touched
+        piece (get position square)
+
+        ;; call their onTouchSquare function if provided
+        on-touchsquare-result (when (fn? onTouchSquare)
+                                (let [js-board-info (js-obj "orientation" orientation
+                                                            "position" (clj->js position))]
+                                                            ;; FIXME: add square, piece here
+                                                            ;; what else?
+                                  (onTouchSquare square piece js-board-info)))]
+
+    ;; begin dragging if configured
+    (when (and piece
+               (or (true? draggable) (true? touchDraggable)))
+      (begin-dragging! board-state square piece clientX clientY))
+
+    ;; highlight the square and queue a move if touchmove is enabled
+    (when (and (true? touchMove)
+               (not (false? on-touchsquare-result))
+               piece))
+    ;; FIXME:
+    ;; - highlight the square here?
+    ;; - or should this be their responsibility?
+    ;; queue their touchmove
+    ; (swap! board-state assoc :touch-move-queue1 {:piece piece, :square square}))
+
+    ;; return null
+    nil))
+--Expected
+
+# metabase ns comment example
+
+--Input
+;; abc
+;; def
+
+(ns metabase.api.common
+  "Dynamic variables and utility functions/macros for writing API functions."
+  (:require
+    [clojure.set :as set]
+    [potemkin :as p]
+    ))
+--Input
+
+--Expected
+;; abc
+;; def
+
+(ns metabase.api.common
+  "Dynamic variables and utility functions/macros for writing API functions."
+  (:require
+   [clojure.set :as set]
+   [potemkin :as p]))
+--Expected
+
+# slurp closing parens around comments 1
+
+--Input
+(aaa
+  [bbb
+   [ccc
+    ddd ;; eee
+    ;; fff
+    ]
+   ggg
+   ])
+
+"hhh"
+--Input
+
+--Expected
+(aaa
+  [bbb
+   [ccc
+    ddd] ;; eee
+    ;; fff
+   ggg])
+
+"hhh"
+--Expected
+
+# slurp closing parens around comments 2
+
+--Input
+(aaa
+  [bbb
+   [ccc
+    ddd
+    ;; eee
+    ]
+   fff
+   ])
+
+"ggg"
+--Input
+
+--Expected
+(aaa
+  [bbb
+   [ccc
+    ddd]
+    ;; eee
+   fff])
+
+"ggg"
+--Expected
+
+# slurp closing parens around comments 3
+
+--Input
+(aaa
+  ;; bbb
+  ;; ccc
+  )
+--Input
+
+--Expected
+(aaa)
+  ;; bbb
+  ;; ccc
+--Expected
+
+# slurp closing parens around comments 4
+
+--Input
+(aaa
+  [bbb
+   [ccc
+    ddd ;; eee
+    ;; fff
+    ;; ggg
+    ] ]
+   hhh
+   )
+
+"iii"
+--Input
+
+--Expected
+(aaa
+  [bbb
+   [ccc
+    ddd]] ;; eee
+    ;; fff
+    ;; ggg
+  hhh)
+
+"iii"
+--Expected
+
+# slurp closing parens around comments - metabase example
+
+--Input
+(mr/def ::stage.native
+  [:and
+   [:map
+    {:decode/normalize common/normalize-map}
+    [:lib/type [:= {:decode/normalize common/normalize-keyword} :mbql.stage/native]]
+    ;; the actual native query, depends on the underlying database. Could be a raw SQL string or something like that.
+    ;; Only restriction is that it is non-nil.
+    [:native some?]
+    ;; any parameters that should be passed in along with the query to the underlying query engine, e.g. for JDBC these
+    ;; are the parameters we pass in for a `PreparedStatement` for `?` placeholders. These can be anything, including
+    ;; nil.
+    ;;
+    ;; TODO -- pretty sure this is supposed to be `:params`, not `:args`, and this is allowed to be anything rather
+    ;; than just `literal`... I think we're using the `literal` schema tho for either normalization or serialization
+    [:args {:optional true} [:sequential ::literal/literal]]
+    ;; the Table/Collection/etc. that this query should be executed against; currently only used for MongoDB, where it
+    ;; is required.
+    [:collection {:optional true} ::common/non-blank-string]
+    ;; optional template tag declarations. Template tags are things like `{{x}}` in the query (the value of the
+    ;; `:native` key), but their definition lives under this key.
+    [:template-tags {:optional true} [:ref ::template-tag/template-tag-map]]
+    ;; optional, set of Card IDs referenced by this query in `:card` template tags like `{{card}}`. This is added
+    ;; automatically during parameter expansion. To run a native query you must have native query permissions as well
+    ;; as permissions for any Cards' parent Collections used in `:card` template tag parameters.
+    [:metabase.models.query.permissions/referenced-card-ids {:optional true} [:maybe [:set ::id/card]]]
+    ;;
+    ;; TODO -- parameters??
+    ]
+   [:fn
+    {:error/message ":source-table is not allowed in a native query stage."}
+    #(not (contains? % :source-table))]
+   [:fn
+    {:error/message ":source-card is not allowed in a native query stage."}
+    #(not (contains? % :source-card))]])
+--Input
+
+--Expected
+(mr/def ::stage.native
+  [:and
+   [:map
+    {:decode/normalize common/normalize-map}
+    [:lib/type [:= {:decode/normalize common/normalize-keyword} :mbql.stage/native]]
+    ;; the actual native query, depends on the underlying database. Could be a raw SQL string or something like that.
+    ;; Only restriction is that it is non-nil.
+    [:native some?]
+    ;; any parameters that should be passed in along with the query to the underlying query engine, e.g. for JDBC these
+    ;; are the parameters we pass in for a `PreparedStatement` for `?` placeholders. These can be anything, including
+    ;; nil.
+    ;;
+    ;; TODO -- pretty sure this is supposed to be `:params`, not `:args`, and this is allowed to be anything rather
+    ;; than just `literal`... I think we're using the `literal` schema tho for either normalization or serialization
+    [:args {:optional true} [:sequential ::literal/literal]]
+    ;; the Table/Collection/etc. that this query should be executed against; currently only used for MongoDB, where it
+    ;; is required.
+    [:collection {:optional true} ::common/non-blank-string]
+    ;; optional template tag declarations. Template tags are things like `{{x}}` in the query (the value of the
+    ;; `:native` key), but their definition lives under this key.
+    [:template-tags {:optional true} [:ref ::template-tag/template-tag-map]]
+    ;; optional, set of Card IDs referenced by this query in `:card` template tags like `{{card}}`. This is added
+    ;; automatically during parameter expansion. To run a native query you must have native query permissions as well
+    ;; as permissions for any Cards' parent Collections used in `:card` template tag parameters.
+    [:metabase.models.query.permissions/referenced-card-ids {:optional true} [:maybe [:set ::id/card]]]]
+    ;;
+    ;; TODO -- parameters??
+   [:fn
+    {:error/message ":source-table is not allowed in a native query stage."}
+    #(not (contains? % :source-table))]
+   [:fn
+    {:error/message ":source-card is not allowed in a native query stage."}
+    #(not (contains? % :source-card))]])
+--Expected
+
+# tag literals
+
+--Input
+{:url #join ["jdbc:postgresql://psq-prod/prod?user="
+             #env PROD_USER
+             "&password="
+               #env PROD_PASSWD]}
+--Input
+
+--Expected
+{:url #join ["jdbc:postgresql://psq-prod/prod?user="
+             #env PROD_USER
+             "&password="
+             #env PROD_PASSWD]}
+--Expected
+
+# comments after ns form
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/75
+
+--Input
+(ns foo.bar
+  (:require baz.core
+            ))
+
+(comment
+  ;; foo
+  )
+
+
+(comment
+  ;; bar
+  )
+
+(comment
+  ;; baz
+  )
+--Input
+
+--Expected
+(ns foo.bar
+  (:require
+   [baz.core]))
+
+(comment)
+  ;; foo
+
+(comment)
+  ;; bar
+
+(comment)
+  ;; baz
+--Expected
+
+# spaces around comments 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/62
+
+--Input
+(aaa);;bbb
+(ccc);ddd
+(eee) ;;;;fff
+--Input
+
+--Expected
+(aaa) ;; bbb
+(ccc) ; ddd
+(eee) ;;;; fff
+--Expected
+
+# spaces around comments 2
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/62#issuecomment-2334589873
+
+--Input
+(let [;;foo
+      a "a"
+      b "b"]);;bar
+--Input
+
+--Expected
+(let [;; foo
+      a "a"
+      b "b"]) ;; bar
+--Expected
+
+# example code from Issue #60
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/60#issuecomment-2340644974
+
+--Input
+(defn classify-squares [n]
+  (->> (range n)          ; generate a bunch of numbers
+       (map #(* % %))     ; calculate their squares
+       (group-by even?))) ; and sort them by parity
+--Input
+
+--Expected
+(defn classify-squares [n]
+  (->> (range n)          ; generate a bunch of numbers
+       (map #(* % %))     ; calculate their squares
+       (group-by even?))) ; and sort them by parity
+--Expected
+
+# respect commas to hold parens 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/60#issuecomment-2342314213
+
+--Input
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+    ,))
+--Input
+
+--Expected
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+    ,))
+--Expected
+
+# respect commas to hold parens 2
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/60#issuecomment-2342314213
+
+--Input
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+
+
+
+    ,))
+--Input
+
+--Expected
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+
+    ,))
+--Expected
+
+# respect commas to hold parens 3
+
+--Input
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+    ,,, , ))
+
+(aaa
+  ,,, ,,  )
+--Input
+
+--Expected
+(aaa bbb
+  (ccc
+    (ddd) ;; eee
+    (fff) ;; ggg
+    ,,, ,))
+
+(aaa
+  ,,, ,,)
+--Expected
+
+# respect commas to hold parens 4
+
+--Input
+(aaa
+  , ;; foo
+  )
+--Input
+
+--Expected
+(aaa
+  ,) ;; foo
+--Expected
+
+# GitHub Issue #97 - whitespace character
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/97
+
+--Input
+(def test-spaces []
+  (str " " \space \ ))
+
+(test-spaces) ;; => "   "
+--Input
+
+--Expected
+(def test-spaces []
+  (str " " \space \ ))
+
+(test-spaces) ;; => "   "
+--Expected
+
+# GitHub Issue #99 - bug with parens inside string literals
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/99
+
+--Input
+(defn rgb->css
+  ([r g b] (str "rgb(" r "," g "," b ")"))
+  ([r g b a] (str "rgba(" r "," g "," b "," a ")")))
+--Input
+
+--Expected
+(defn rgb->css
+  ([r g b] (str "rgb(" r "," g "," b ")"))
+  ([r g b a] (str "rgba(" r "," g "," b "," a ")")))
+--Expected
+
+# GitHub Issue #108 - anonymous function indentation
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/108
+
+--Input
+(when :foo
+:bar)
+
+#(when :foo
+:bar)
+--Input
+
+--Expected
+(when :foo
+  :bar)
+
+#(when :foo
+   :bar)
+--Expected
+
+# GitHub Issue #110 - tagged literal indentation
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/110
+
+--Input
+   (-> #js aaa
+       bbb
+         ccc)
+
+(-> #uuid "15adfdf0-2e6b-410e-a489-f71d1dd17642"
+    str)
+
+(-> #js ddd
+eee)
+--Input
+
+--Expected
+(-> #js aaa
+    bbb
+    ccc)
+
+(-> #uuid "15adfdf0-2e6b-410e-a489-f71d1dd17642"
+    str)
+
+(-> #js ddd
+  eee)
+--Expected
+
+# GitHub Issue #104 - treat eol commas as trailing whitespace
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/104
+
+--Input
+(aaa,
+   bbb),
+
+(ccc ,,
+  :ddd
+  )   ,
+--Input
+
+--Expected
+(aaa
+  bbb)
+
+(ccc
+  :ddd)
+--Expected
+
+# GitHub Issue #6 - ignore forms
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/6
+
+--Input
+(aaa
+bbb)
+
+#_ :standard-clj/ignore
+(ccc
+ddd)
+
+(eee
+fff)
+--Input
+
+--Expected
+(aaa
+  bbb)
+
+#_ :standard-clj/ignore
+(ccc
+ddd)
+
+(eee
+  fff)
+--Expected
+
+# ignore forms 2
+
+--Input
+#_:standard-clj/ignore
+(ccc
+ddd)
+
+(eee
+fff)
+--Input
+
+--Expected
+#_:standard-clj/ignore
+(ccc
+ddd)
+
+(eee
+  fff)
+--Expected
+
+# ignore forms 3
+
+--Input
+#_ :standard-clj/ignore
+   :foo
+   :bar
+--Input
+
+--Expected
+#_ :standard-clj/ignore
+   :foo
+:bar
+--Expected
+
+# ignore forms 4
+
+--Input
+[aaa
+bbb]
+#_:standard-clj/ignore
+   :foo
+{ccc
+ddd}
+--Input
+
+--Expected
+[aaa
+ bbb]
+#_:standard-clj/ignore
+   :foo
+{ccc
+ ddd}
+--Expected
+
+# ignore forms 5
+
+--Input
+#_{:standard-clj/ignore true}
+   [:foo]
+   :bar
+--Input
+
+--Expected
+#_{:standard-clj/ignore true}
+   [:foo]
+:bar
+--Expected
+
+# ignore forms 6
+
+--Input
+(let [aaa "aaa"
+      bbb #_ :standard-clj/ignore [     [   "bbb"
+
+  :ccc
+           ]      :ddd  ,,
+           ]
+      eee "eee"
+      ])
+--Input
+
+--Expected
+(let [aaa "aaa"
+      bbb #_ :standard-clj/ignore [     [   "bbb"
+
+  :ccc
+           ]      :ddd  ,,
+           ]
+      eee "eee"])
+--Expected
+
+# ignore forms 7
+
+--Input
+#_:standard-clj/ignore
+(ns com.example (:require [clojure.string]))
+
+  "aaa"
+--Input
+
+--Expected
+#_:standard-clj/ignore
+(ns com.example (:require [clojure.string]))
+
+"aaa"
+--Expected
+
+# ignore forms 8
+
+--Input
+#_{:standard-clj/ignore true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_{:standard-clj/ignore true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+"aaa"
+--Expected
+
+# :standard-clj/ignore-file 1
+
+--Input
+#_ :standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_ :standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Expected
+
+# :standard-clj/ignore-file 2
+
+--Input
+;; :standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+;; :standard-clj/ignore-file
+(ns com.example
+  (:require
+   [clojure.string]))
+
+"aaa"
+--Expected
+
+# :standard-clj/ignore-file 3
+
+--Input
+:standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+:standard-clj/ignore-file
+(ns com.example
+  (:require
+   [clojure.string]))
+
+"aaa"
+--Expected
+
+# :standard-clj/ignore-file 4
+
+--Input
+#_ :aaa
+:standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_ :aaa
+:standard-clj/ignore-file
+(ns com.example
+  (:require
+   [clojure.string]))
+
+"aaa"
+--Expected
+
+# :standard-clj/ignore-file 5
+
+--Input
+#_
+:standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_
+:standard-clj/ignore-file
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Expected
+
+# :standard-clj/ignore-file 6
+
+--Input
+#_ {:standard-clj/ignore-file true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_ {:standard-clj/ignore-file true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Expected
+
+# :standard-clj/ignore-file 7
+
+--Input
+#_ {:standard-clj/ignore-file false}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_ {:standard-clj/ignore-file false}
+(ns com.example
+  (:require
+   [clojure.string]))
+
+"aaa"
+--Expected
+
+# :standard-clj/ignore-file 8
+
+--Input
+#_{:standard-clj/ignore-file,
+true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_{:standard-clj/ignore-file,
+true}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Expected
+
+# :standard-clj/ignore-file 9
+
+--Input
+#_{:standard-clj/ignore-file,
+false}
+(ns com.example
+(:require [clojure.string]
+)
+  )
+
+  "aaa"
+--Input
+
+--Expected
+#_{:standard-clj/ignore-file
+   false}
+(ns com.example
+  (:require
+   [clojure.string]))
+
+"aaa"
+--Expected
+
+# GitHub Issue #123 - eol commas inside comments
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/123
+
+--Input
+;; foo, bar,
+;; biz, baz,
+gee, gaz,
+hee, haz,
+--Input
+
+--Expected
+;; foo, bar,
+;; biz, baz,
+gee, gaz
+hee, haz
+--Expected
+
+# GitHub Issue #137 - defmacro ns
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/137
+
+--Input
+;   Copyright (c) Rich Hickey. All rights reserved.
+;   The use and distribution terms for this software are covered by the
+;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;   which can be found in the file epl-v10.html at the root of this distribution.
+;   By using this software in any fashion, you are agreeing to be bound by
+;   the terms of this license.
+;   You must not remove this notice, or any other, from this software.
+
+(ns ^{:doc "The core Clojure language."
+       :author "Rich Hickey"}
+  clojure.core)
+
+(def unquote)
+(def unquote-splicing)
+
+(def
+ ^{:arglists '([& items])
+   :doc "Creates a new list containing the items."
+   :added "1.0"}
+  list (. clojure.lang.PersistentList creator))
+
+(def
+ ^{:arglists '([x seq])
+    :doc "Returns a new seq where x is the first element and seq is
+    the rest."
+   :added "1.0"
+   :static true}
+
+ cons (fn* ^:static cons [x seq] (. clojure.lang.RT (cons x seq))))
+
+;during bootstrap we don't have destructuring let, loop or fn, will redefine later
+(def
+  ^{:macro true
+    :added "1.0"}
+  let (fn* let [&form &env & decl] (cons 'let* decl)))
+
+;; ...
+
+(declare gen-class)
+
+(defmacro with-loading-context [& body]
+  `((fn loading# []
+        (. clojure.lang.Var (pushThreadBindings {clojure.lang.Compiler/LOADER
+                                                 (.getClassLoader (.getClass ^Object loading#))}))
+        (try
+         ~@body
+         (finally
+          (. clojure.lang.Var (popThreadBindings)))))))
+
+(defmacro ns
+  "Sets *ns* to the namespace named by name (unevaluated), creating it
+  if needed.  references can be zero or more of: (:refer-clojure ...)
+  (:require ...) (:use ...) (:import ...) (:load ...) (:gen-class)
+  with the syntax of refer-clojure/require/use/import/load/gen-class
+  respectively, except the arguments are unevaluated and need not be
+  quoted. (:gen-class ...), when supplied, defaults to :name
+  corresponding to the ns name, :main true, :impl-ns same as ns, and
+  :init-impl-ns true. All options of gen-class are
+  supported. The :gen-class directive is ignored when not
+  compiling. If :gen-class is not supplied, when compiled only an
+  nsname__init.class will be generated. If :refer-clojure is not used, a
+  default (refer 'clojure.core) is used.  Use of ns is preferred to
+  individual calls to in-ns/require/use/import:
+
+  (ns foo.bar
+    (:refer-clojure :exclude [ancestors printf])
+    (:require (clojure.contrib sql combinatorics))
+    (:use (my.lib this that))
+    (:import (java.util Date Timer Random)
+             (java.sql Connection Statement)))"
+  {:arglists '([name docstring? attr-map? references*])
+   :added "1.0"}
+  [name & references]
+  (let [process-reference
+        (fn [[kname & args]]
+          `(~(symbol "clojure.core" (clojure.core/name kname))
+             ~@(map #(list 'quote %) args)))
+        docstring  (when (string? (first references)) (first references))
+        references (if docstring (next references) references)
+        name (if docstring
+               (vary-meta name assoc :doc docstring)
+               name)
+        metadata   (when (map? (first references)) (first references))
+        references (if metadata (next references) references)
+        name (if metadata
+               (vary-meta name merge metadata)
+               name)
+        gen-class-clause (first (filter #(= :gen-class (first %)) references))
+        gen-class-call
+          (when gen-class-clause
+            (list* `gen-class :name (.replace (str name) \- \_) :impl-ns name :main true (next gen-class-clause)))
+        references (remove #(= :gen-class (first %)) references)
+        ;ns-effect (clojure.core/in-ns name)
+        name-metadata (meta name)]
+    `(do
+       (clojure.core/in-ns '~name)
+       ~@(when name-metadata
+           `((.resetMeta (clojure.lang.Namespace/find '~name) ~name-metadata)))
+       (with-loading-context
+        ~@(when gen-class-call (list gen-class-call))
+        ~@(when (and (not= name 'clojure.core) (not-any? #(= :refer-clojure (first %)) references))
+            `((clojure.core/refer '~'clojure.core)))
+        ~@(map process-reference references))
+        (if (.equals '~name 'clojure.core)
+          nil
+          (do (dosync (commute @#'*loaded-libs* conj '~name)) nil)))))
+
+(defmacro refer-clojure
+  "Same as (refer 'clojure.core <filters>)"
+  {:added "1.0"}
+  [& filters]
+  `(clojure.core/refer '~'clojure.core ~@filters))
+--Input
+
+--Expected
+;   Copyright (c) Rich Hickey. All rights reserved.
+;   The use and distribution terms for this software are covered by the
+;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;   which can be found in the file epl-v10.html at the root of this distribution.
+;   By using this software in any fashion, you are agreeing to be bound by
+;   the terms of this license.
+;   You must not remove this notice, or any other, from this software.
+
+(ns clojure.core
+  {:doc "The core Clojure language."
+   :author "Rich Hickey"})
+
+(def unquote)
+(def unquote-splicing)
+
+(def
+  ^{:arglists '([& items])
+    :doc "Creates a new list containing the items."
+    :added "1.0"}
+  list (. clojure.lang.PersistentList creator))
+
+(def
+  ^{:arglists '([x seq])
+    :doc "Returns a new seq where x is the first element and seq is
+    the rest."
+    :added "1.0"
+    :static true}
+
+  cons (fn* ^:static cons [x seq] (. clojure.lang.RT (cons x seq))))
+
+; during bootstrap we don't have destructuring let, loop or fn, will redefine later
+(def
+  ^{:macro true
+    :added "1.0"}
+  let (fn* let [&form &env & decl] (cons 'let* decl)))
+
+;; ...
+
+(declare gen-class)
+
+(defmacro with-loading-context [& body]
+  `((fn loading# []
+        (. clojure.lang.Var (pushThreadBindings {clojure.lang.Compiler/LOADER
+                                                 (.getClassLoader (.getClass ^Object loading#))}))
+        (try
+          ~@body
+          (finally
+            (. clojure.lang.Var (popThreadBindings)))))))
+
+(defmacro ns
+  "Sets *ns* to the namespace named by name (unevaluated), creating it
+  if needed.  references can be zero or more of: (:refer-clojure ...)
+  (:require ...) (:use ...) (:import ...) (:load ...) (:gen-class)
+  with the syntax of refer-clojure/require/use/import/load/gen-class
+  respectively, except the arguments are unevaluated and need not be
+  quoted. (:gen-class ...), when supplied, defaults to :name
+  corresponding to the ns name, :main true, :impl-ns same as ns, and
+  :init-impl-ns true. All options of gen-class are
+  supported. The :gen-class directive is ignored when not
+  compiling. If :gen-class is not supplied, when compiled only an
+  nsname__init.class will be generated. If :refer-clojure is not used, a
+  default (refer 'clojure.core) is used.  Use of ns is preferred to
+  individual calls to in-ns/require/use/import:
+
+  (ns foo.bar
+    (:refer-clojure :exclude [ancestors printf])
+    (:require (clojure.contrib sql combinatorics))
+    (:use (my.lib this that))
+    (:import (java.util Date Timer Random)
+             (java.sql Connection Statement)))"
+  {:arglists '([name docstring? attr-map? references*])
+   :added "1.0"}
+  [name & references]
+  (let [process-reference
+        (fn [[kname & args]]
+          `(~(symbol "clojure.core" (clojure.core/name kname))
+             ~@(map #(list 'quote %) args)))
+        docstring  (when (string? (first references)) (first references))
+        references (if docstring (next references) references)
+        name (if docstring
+               (vary-meta name assoc :doc docstring)
+               name)
+        metadata   (when (map? (first references)) (first references))
+        references (if metadata (next references) references)
+        name (if metadata
+               (vary-meta name merge metadata)
+               name)
+        gen-class-clause (first (filter #(= :gen-class (first %)) references))
+        gen-class-call
+        (when gen-class-clause
+          (list* `gen-class :name (.replace (str name) \- \_) :impl-ns name :main true (next gen-class-clause)))
+        references (remove #(= :gen-class (first %)) references)
+        ; ns-effect (clojure.core/in-ns name)
+        name-metadata (meta name)]
+    `(do
+       (clojure.core/in-ns '~name)
+       ~@(when name-metadata
+           `((.resetMeta (clojure.lang.Namespace/find '~name) ~name-metadata)))
+       (with-loading-context
+         ~@(when gen-class-call (list gen-class-call))
+         ~@(when (and (not= name 'clojure.core) (not-any? #(= :refer-clojure (first %)) references))
+             `((clojure.core/refer '~'clojure.core)))
+         ~@(map process-reference references))
+       (if (.equals '~name 'clojure.core)
+         nil
+         (do (dosync (commute @#'*loaded-libs* conj '~name)) nil)))))
+
+(defmacro refer-clojure
+  "Same as (refer 'clojure.core <filters>)"
+  {:added "1.0"}
+  [& filters]
+  `(clojure.core/refer '~'clojure.core ~@filters))
+--Expected
+
+# GitHub Issue #161 - namespaced map literals 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/161
+
+--Input
+(def my-vec
+ [#:xyz{:aaa "aaa"
+        :bbb "bbb"
+        :ccc "ccc"}
+
+  #:xyz{:ddd "ddd"
+        :eee "eee"
+        :fff "fff"}])
+--Input
+
+--Expected
+(def my-vec
+  [#:xyz{:aaa "aaa"
+         :bbb "bbb"
+         :ccc "ccc"}
+
+   #:xyz{:ddd "ddd"
+         :eee "eee"
+         :fff "fff"}])
+--Expected
+
+
+# GitHub Issue #161 - namespaced map literals 2
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/161
+
+--Input
+(def my-vec
+ [#:xyz{:aaa "aaa"
+ :bbb "bbb"
+ :ccc "ccc"}
+
+ #:xyz{:ddd "ddd"
+ :eee "eee"
+ :fff "fff"}])
+--Input
+
+--Expected
+(def my-vec
+  [#:xyz{:aaa "aaa"
+         :bbb "bbb"
+         :ccc "ccc"}
+
+   #:xyz{:ddd "ddd"
+         :eee "eee"
+         :fff "fff"}])
+--Expected
+
+# GitHub Issue #162 - bug with commas 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/162
+
+--Input
+aaa, ;; foo
+bbb,;;bar
+--Input
+
+--Expected
+aaa ;; foo
+bbb ;; bar
+--Expected
+
+# GitHub Issue #162 - bug with commas 2
+
+--Input
+(def my-map
+  {:aaa "aaa",
+   :bbb "bbb", ;; foo
+   :ccc "ccc",,,,,,,,,,,,})
+--Input
+
+--Expected
+(def my-map
+  {:aaa "aaa"
+   :bbb "bbb" ;; foo
+   :ccc "ccc"})
+--Expected
+
+# GitHub Issue #162 - bug with commas 3
+
+--Input
+(def my-vec
+  [a "a"
+   b "b"
+   ;; foo
+   ,])
+--Input
+
+--Expected
+(def my-vec
+  [a "a"
+   b "b"
+   ;; foo
+   ,])
+--Expected
+
+# GitHub Issue #162 - bug with commas 4
+
+--Input
+(def my-vec
+  [a "a"
+   b "b",
+   ;; foo
+   ;; bar
+   ,])
+--Input
+
+--Expected
+(def my-vec
+  [a "a"
+   b "b"
+   ;; foo
+   ;; bar
+   ,])
+--Expected
+
+# GitHub Issue #162 - bug with commas 5
+
+--Input
+(def my-vec
+  [a "a"
+   b "b",
+   ;; foo
+   ;; bar
+   , ])
+--Input
+
+--Expected
+(def my-vec
+  [a "a"
+   b "b"
+   ;; foo
+   ;; bar
+   ,])
+--Expected
+
+# GitHub Issue #165 - tag literal alignment 1
+
+--Input
+(case
+  #uuid "96bbb029-40e7-4566-83d5-7e6088a908fc" :a
+  ;; a comment
+  #uuid "148ccf8b-6122-4435-9a39-001e13a8aad7" :b)
+--Input
+
+--Expected
+(case
+  #uuid "96bbb029-40e7-4566-83d5-7e6088a908fc" :a
+  ;; a comment
+  #uuid "148ccf8b-6122-4435-9a39-001e13a8aad7" :b)
+--Expected
+
+# GitHub Issue #165 - tag literal alignment 2
+
+--Input
+(foo bar #aaa "aaa"
+              ;; bbb
+           :ccc)
+
+(foo bar #aaa "aaa"
+         ;; bbb
+         :ccc)
+
+  (foo
+        #aaa "aaa")
+--Input
+
+--Expected
+(foo bar #aaa "aaa"
+              ;; bbb
+              :ccc)
+
+(foo bar #aaa "aaa"
+         ;; bbb
+         :ccc)
+
+(foo
+  #aaa "aaa")
+--Expected
+
+# GitHub Issue #178 - ns symbol with no ns form
+
+--Input
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Input
+
+--Expected
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Expected
+
+# GitHub Issue #178 - ns symbol with ns form
+
+--Input
+  (ns
+
+com.example.my-app)
+
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Input
+
+--Expected
+(ns com.example.my-app)
+
+(defn ns
+  "(:load ...)"
+  []
+  (println "boop"))
+--Expected
+
+# GitHub Issue #189 - set alignment bug 1
+
+--Input
+#{1
+  2
+  3
+  4}
+--Input
+
+--Expected
+#{1
+  2
+  3
+  4}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 2
+
+--Input
+#{[1]
+  [2]
+  [3]
+  [4]}
+--Input
+
+--Expected
+#{[1]
+  [2]
+  [3]
+  [4]}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 3
+
+--Input
+#{1
+  [2]
+  3
+  [4]
+  5}
+--Input
+
+--Expected
+#{1
+  [2]
+  3
+  [4]
+  5}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 4
+
+--Input
+#{[1]
+  2
+  [3]
+  4
+  [5]}
+--Input
+
+--Expected
+#{[1]
+  2
+  [3]
+  4
+  [5]}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 5
+
+--Input
+#{{:a "a"}
+  :b
+  [:c]}
+--Input
+
+--Expected
+#{{:a "a"}
+  :b
+  [:c]}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 6
+
+--Input
+(defn nested []
+  #{{:a "a"}
+    :b
+    [:c]})
+--Input
+
+--Expected
+(defn nested []
+  #{{:a "a"}
+    :b
+    [:c]})
+--Expected
+
+# GitHub Issue #189 - set alignment bug 7
+
+--Input
+#{#(:aaa %)
+ :b
+ #(:ccc %)}
+--Input
+
+--Expected
+#{#(:aaa %)
+  :b
+  #(:ccc %)}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 8
+
+--Input
+#{#{"a"} :a
+ :b
+ #(:ccc %)
+ }
+--Input
+
+--Expected
+#{#{"a"} :a
+  :b
+  #(:ccc %)}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 9
+
+--Input
+#{#?(:clj "a"
+    :cljs "b")
+ :b
+ #(:ccc %)
+ }
+--Input
+
+--Expected
+#{#?(:clj "a"
+     :cljs "b")
+  :b
+  #(:ccc %)}
+--Expected
+
+# GitHub Issue #189 - set alignment bug 10
+
+--Input
+#{ #:xyz{ #:aaa{:a "a"
+     :b "b"} }
+          :ccc
+  :ddd
+ }
+--Input
+
+--Expected
+#{#:xyz{#:aaa{:a "a"
+              :b "b"}}
+  :ccc
+  :ddd}
+--Expected
+
+# multi-byte symbols
+
+--Input
+(let [price-at-σ (fn [b]
+                   (round-price-to-α (* dynamic-multipler b)))
+
+      levels-σ [{:key "010" :mult 0.1}
+                {:key "020" :mult 0.2}
+                {:key "030" :mult 0.3}]]
+  nil)
+--Input
+
+--Expected
+(let [price-at-σ (fn [b]
+                   (round-price-to-α (* dynamic-multipler b)))
+
+      levels-σ [{:key "010" :mult 0.1}
+                {:key "020" :mult 0.2}
+                {:key "030" :mult 0.3}]]
+  nil)
+--Expected
+
+# GitHub Issue #202 - metadata before arglist 1
+
+> https://github.com/oakmac/standard-clojure-style-js/issues/202
+> Type hint on arglist in multi-arity defn should not change indentation:
+> body aligns with the first character of the first arg (the ^), not +2 from the opener.
+
+--Input
+(defn ms->tg-dt
+  "Gets the current date-time in or converts a given `dt-ms` (date-time millis)
+   to the Telegram Date/Time format."
+  (^long []
+    (types/ms->tg-dt))
+  (^long [^long dt-ms]
+    (types/ms->tg-dt dt-ms)))
+--Input
+
+--Expected
+(defn ms->tg-dt
+  "Gets the current date-time in or converts a given `dt-ms` (date-time millis)
+   to the Telegram Date/Time format."
+  (^long []
+   (types/ms->tg-dt))
+  (^long [^long dt-ms]
+   (types/ms->tg-dt dt-ms)))
+--Expected
+
+# GitHub Issue #202 - metadata before arglist 2
+
+> Simpler reproducer — same shape as "Do not cross previous line last opener",
+> just with a return-type hint on the arglist.
+
+--Input
+(defn foo
+  (^long [a]
+    (bar a))
+  (^long [a b]
+    (str a "-" b)))
+--Input
+
+--Expected
+(defn foo
+  (^long [a]
+   (bar a))
+  (^long [a b]
+   (str a "-" b)))
+--Expected
+
+# GitHub Issue #202 - metadata before arglist 3
+
+> Keyword-shaped metadata should behave the same.
+
+--Input
+(defn foo
+  (^:private [a]
+    (bar a)))
+--Input
+
+--Expected
+(defn foo
+  (^:private [a]
+   (bar a)))
+--Expected
+
+# GitHub Issue #202 - metadata before arglist 4
+
+> Map-shaped metadata is a different parse path (the .meta is a map literal,
+> not a token), so worth a separate case.
+
+--Input
+(defn foo
+  (^{:doc "single arity"} [a]
+    (bar a))
+  (^{:doc "two arity"} [a b]
+    (str a "-" b)))
+--Input
+
+--Expected
+(defn foo
+  (^{:doc "single arity"} [a]
+   (bar a))
+  (^{:doc "two arity"} [a b]
+   (str a "-" b)))
+--Expected
+
+# GitHub Issue #202 - metadata before arglist 5
+
+> Body that crosses multiple lines should still align to ^, not to the opener.
+
+--Input
+(defn foo
+  (^long []
+    (let [x 1]
+      (println x)
+      (* x x))))
+--Input
+
+--Expected
+(defn foo
+  (^long []
+   (let [x 1]
+     (println x)
+     (* x x))))
+--Expected
+
+# GitHub Issue #202 - metadata containing reader conditionals
+
+> If a metadata map contains a reader conditional, the depth tracking
+> should properly skip the entire map and align to the arglist.
+
+--Input
+(defn foo
+  (^{:doc #?(:clj "clj"
+             :cljs "cljs")} [a]
+    (bar a))
+  (^{:doc "other"} [a b]
+    (str a "-" b)))
+--Input
+
+--Expected
+(defn foo
+  (^{:doc #?(:clj "clj"
+             :cljs "cljs")} [a]
+   (bar a))
+  (^{:doc "other"} [a b]
+   (str a "-" b)))
+--Expected
+
+# GitHub Issue #202 - reader conditional arglist with metadata
+
+> If the arglist itself is wrapped in a reader conditional, and the
+> platform-specific arglists have metadata, they should still align correctly.
+
+--Input
+(defn foo
+  #?(:clj (^long [a]
+            (bar a))
+     :cljs (^number [a]
+             (bar a))))
+--Input
+
+--Expected
+(defn foo
+  #?(:clj (^long [a]
+           (bar a))
+     :cljs (^number [a]
+            (bar a))))
+--Expected
+
+# GitHub Issue #197 - do not align comments across blank lines
+> https://github.com/oakmac/standard-clojure-style-js/issues/197
+
+--Input
+;; comment1
+(aaa
+bbb ccc)
+
+;; comment2
+(aaa bbb
+         ccc
+         ddd)
+--Input
+
+--Expected
+;; comment1
+(aaa
+  bbb ccc)
+
+;; comment2
+(aaa bbb
+  ccc
+  ddd)
+--Expected
+
+# Namespaced map literals with symbol characters in the alias
+
+--Input
+(def my-map
+ [#:my-ns{:aaa "aaa"
+ :bbb "bbb"}
+ #::my-ns{:ccc "ccc"
+ :ddd "ddd"}
+   #:foo.bar->baz?{:eee "eee"
+     :fff "fff"}])
+--Input
+
+--Expected
+(def my-map
+  [#:my-ns{:aaa "aaa"
+           :bbb "bbb"}
+   #::my-ns{:ccc "ccc"
+            :ddd "ddd"}
+   #:foo.bar->baz?{:eee "eee"
+                   :fff "fff"}])
+--Expected
+
+# string with backslash before newline is left alone
+
+--Input
+(def x "a\
+b")
+
+(def y 1)
+--Input
+
+--Expected
+(def x "a\
+b")
+
+(def y 1)
+--Expected
+
