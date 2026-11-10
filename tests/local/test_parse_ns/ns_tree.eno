@@ -306,3 +306,28 @@
   "errorMessage": ":require :include-macros must be followed by true or false."
 }
 --Expected
+
+# comment after a multi-line libspec belongs to the libspec
+
+--Input
+(ns a
+  (:require [b
+             :as c] ;; x
+            [d]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b",
+      "as": "c",
+      "commentAfter": ";; x"
+    },
+    {
+      "symbol": "d"
+    }
+  ]
+}
+--Expected

@@ -11,7 +11,7 @@ private typedef Slot = {
 /** Where a comment at the end of a line goes: the item that ends on one of the lines `from` to `to`. **/
 private typedef Target = {
 	final from:Int;
-	final to:Int;
+	var to:Int;
 	final set:String->Void;
 };
 
@@ -311,6 +311,12 @@ class NsParser {
 		target = {from: l, to: l, set: set};
 	}
 
+	// a comment after the closing bracket of a multi-line libspec belongs to it
+	function extendTargetToEndOf(form:Node):Void {
+		if (target != null)
+			target.to = Std.int(Math.max(target.to, line(lastDescendant(form))));
+	}
+
 	function trivia(n:Node):Void {
 		final isDiscard = isReaderComment(n);
 		final text = isDiscard ? textOf(n) : n.text;
@@ -588,11 +594,14 @@ class NsParser {
 			final req = newRequire('"' + stringText(symbol) + '"', symbol, first.platform);
 			req.symbolIsString = true;
 			requireOptions(ss, i, req);
+			extendTargetToEndOf(form);
 		} else if (isToken(symbol) && !isKeyword(symbol)) {
-			if (isPrefixList(ss, i))
+			if (isPrefixList(ss, i)) {
 				prefixList(symbol, ss, i);
-			else
+			} else {
 				requireOptions(ss, i, newRequire(symbol.text, symbol, first.platform));
+				extendTargetToEndOf(form);
+			}
 		}
 	}
 
