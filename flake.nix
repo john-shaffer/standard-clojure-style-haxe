@@ -87,6 +87,19 @@
           echo $? > $out/status
         '';
 
+        # Runs the fuzz tests. Always succeeds; see `just fuzz`. Not a check,
+        # because it currently reports known failures.
+        fuzz-run = pkgs.runCommand "fuzz-run" { nativeBuildInputs = [ pkgs.haxe ]; } ''
+          mkdir -p $out
+          cp -r ${src}/. work
+          chmod -R u+w work
+          cd work
+          export HOME=$TMPDIR
+          set +e
+          haxe test.hxml --run Fuzz tests/upstream tests/local > $out/log 2>&1
+          echo $? > $out/status
+        '';
+
         default = self.packages.${pkgs.stdenv.hostPlatform.system}.standard-clj;
 
         standard-clj = pkgs.stdenv.mkDerivation {
