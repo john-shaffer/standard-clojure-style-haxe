@@ -1,0 +1,717 @@
+# Keyword
+
+-- Input
+:smile
+-- Input
+
+-- Expected
+(source 0..6
+  (token 0..6 ':smile'))
+-- Expected
+
+# Keyword with Prefix
+
+-- Input
+:fun/day
+-- Input
+
+-- Expected
+(source 0..8
+  (token 0..8 ':fun/day'))
+-- Expected
+
+# Autoresolving Keyword
+
+-- Input
+::run
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '::run'))
+-- Expected
+
+# Autoresolving Aliased Keyword
+
+-- Input
+::slow/dance
+-- Input
+
+-- Expected
+(source 0..12
+  (token 0..12 '::slow/dance'))
+-- Expected
+
+# Division Symbol Keyword
+
+-- Input
+:/
+-- Input
+
+-- Expected
+(source 0..2
+  (token 0..2 ':/'))
+-- Expected
+
+# Namespaced Division Symbol Keyword
+
+-- Input
+:clojure.core//
+-- Input
+
+-- Expected
+(source 0..15
+  (token 0..15 ':clojure.core//'))
+-- Expected
+
+# Autoresolving Division Symbol Keyword
+
+-- Input
+::/
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '::/'))
+-- Expected
+
+# Autoresolving Aliased Division Symbol Keyword
+
+-- Input
+::clojure//
+-- Input
+
+-- Expected
+(source 0..11
+  (token 0..11 '::clojure//'))
+-- Expected
+
+# Integer
+
+-- Input
+1
+-- Input
+
+-- Expected
+(source 0..1
+  (token 0..1 '1'))
+-- Expected
+
+# Negative Integer
+
+-- Input
+-2
+-- Input
+
+-- Expected
+(source 0..2
+  (token 0..2 '-2'))
+-- Expected
+
+# BigInt Integer
+
+-- Input
+11N
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '11N'))
+-- Expected
+
+# BigDecimal Integer
+
+-- Input
+99M
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '99M'))
+-- Expected
+
+# Hex
+
+-- Input
+0xaB
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '0xaB'))
+-- Expected
+
+# Negative Hex
+
+-- Input
+-0xFF
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '-0xFF'))
+-- Expected
+
+# Shouting Hex
+
+-- Input
+0XA
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '0XA'))
+-- Expected
+
+# BigInt Hex
+
+-- Input
+0XeN
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '0XeN'))
+-- Expected
+
+# Octal
+
+-- Input
+013
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '013'))
+-- Expected
+
+# Negative Octal
+
+-- Input
+-027
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '-027'))
+-- Expected
+
+# BigInt Octal
+
+-- Input
+0377N
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '0377N'))
+-- Expected
+
+# Radix
+
+-- Input
+2r0101010001
+-- Input
+
+-- Expected
+(source 0..12
+  (token 0..12 '2r0101010001'))
+-- Expected
+
+# Negative Radix
+
+-- Input
+-10r256
+-- Input
+
+-- Expected
+(source 0..7
+  (token 0..7 '-10r256'))
+-- Expected
+
+# Shouting Radix
+
+-- Input
+36RBREATHESL0WLY
+-- Input
+
+-- Expected
+(source 0..16
+  (token 0..16 '36RBREATHESL0WLY'))
+-- Expected
+
+# Ratio
+
+-- Input
+22/7
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '22/7'))
+-- Expected
+
+# Negative Ratio
+
+-- Input
+-1/2
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '-1/2'))
+-- Expected
+
+# Double
+
+-- Input
+1.0
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '1.0'))
+-- Expected
+
+# Negative Double
+
+-- Input
+-2.71828
+-- Input
+
+-- Expected
+(source 0..8
+  (token 0..8 '-2.71828'))
+-- Expected
+
+# Double with Exponent
+
+-- Input
+3e8
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '3e8'))
+-- Expected
+
+# Shouting Double with Exponent
+
+-- Input
+1E9
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 '1E9'))
+-- Expected
+
+# Double with Negative Exponent
+
+-- Input
+2e-1
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 '2e-1'))
+-- Expected
+
+# BigDecimal Double with Exponent
+
+-- Input
+3e1415926535M
+-- Input
+
+-- Expected
+(source 0..13
+  (token 0..13 '3e1415926535M'))
+-- Expected
+
+# Everything Double
+
+-- Input
++0.1E-10M
+-- Input
+
+-- Expected
+(source 0..9
+  (token 0..9 '+0.1E-10M'))
+-- Expected
+
+# Simple Regular Expression
+
+-- Input
+#"."
+-- Input
+
+-- Expected
+(source 0..4
+  (string 0..4
+    (.open 0..2 '#"')
+    (.body 2..3 '.')
+    (.close 3..4 '"')))
+-- Expected
+
+# Hex Digits Regular Expression
+
+-- Input
+#"[0-9a-fA-F]+"
+-- Input
+
+-- Expected
+(source 0..15
+  (string 0..15
+    (.open 0..2 '#"')
+    (.body 2..14 '[0-9a-fA-F]+')
+    (.close 14..15 '"')))
+-- Expected
+
+# Regular Expression Escape
+
+-- Input
+#"\""
+-- Input
+
+-- Expected
+(source 0..5
+  (string 0..5
+    (.open 0..2 '#"')
+    (.body 2..4 '\"')
+    (.close 4..5 '"')))
+-- Expected
+
+# Regular Expression Double Escape
+
+-- Input
+#"\\"
+-- Input
+
+-- Expected
+(source 0..5
+  (string 0..5
+    (.open 0..2 '#"')
+    (.body 2..4 '\\')
+    (.close 4..5 '"')))
+-- Expected
+
+# Simple String
+
+-- Input
+"hello there"
+-- Input
+
+-- Expected
+(source 0..13
+  (string 0..13
+    (.open 0..1 '"')
+    (.body 1..12 'hello there')
+    (.close 12..13 '"')))
+-- Expected
+
+# Simple with Escapes
+
+-- Input
+"ab\ncd\tde"
+-- Input
+
+-- Expected
+(source 0..12
+  (string 0..12
+    (.open 0..1 '"')
+    (.body 1..11 'ab\ncd\tde')
+    (.close 11..12 '"')))
+-- Expected
+
+# Multiline String
+
+-- Input
+"first
+second"
+-- Input
+
+-- Expected
+(source 0..14
+  (string 0..14
+    (.open 0..1 '"')
+    (.body 1..13 'first\nsecond')
+    (.close 13..14 '"')))
+-- Expected
+
+# Empty String
+
+-- Input
+""
+-- Input
+
+-- Expected
+(source 0..2
+  (string 0..2
+    (.open 0..1 '"')
+    (.close 1..2 '"')))
+-- Expected
+
+# String with escaped quote
+
+-- Input
+"abc\"def"
+-- Input
+
+-- Expected
+(source 0..10
+  (string 0..10
+    (.open 0..1 '"')
+    (.body 1..9 'abc\"def')
+    (.close 9..10 '"')))
+-- Expected
+
+# String with double escaped quote
+
+-- Input
+"abcdef\\"
+-- Input
+
+-- Expected
+(source 0..10
+  (string 0..10
+    (.open 0..1 '"')
+    (.body 1..9 'abcdef\\')
+    (.close 9..10 '"')))
+-- Expected
+
+# String with backslash before newline
+
+-- Input
+"a\
+b" c
+-- Input
+
+-- Expected
+(source 0..8
+  (string 0..6
+    (.open 0..1 '"')
+    (.body 1..5 'a\\nb')
+    (.close 5..6 '"'))
+  (token 7..8 'c'))
+-- Expected
+
+# Simple Symbol
+
+-- Input
+def
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 'def'))
+-- Expected
+
+# Symbol with Prefix
+
+-- Input
+clojure.string/blank?
+-- Input
+
+-- Expected
+(source 0..21
+  (token 0..21 'clojure.string/blank?'))
+-- Expected
+
+# Division Symbol
+
+-- Input
+/
+-- Input
+
+-- Expected
+(source 0..1
+  (token 0..1 '/'))
+-- Expected
+
+# Namespaced Division Symbol
+
+-- Input
+clojure.core//
+-- Input
+
+-- Expected
+(source 0..14
+  (token 0..14 'clojure.core//'))
+-- Expected
+
+# Division Symbol followed by delimiter
+
+-- Input
+(+ - * /)
+-- Input
+
+-- Expected
+(source 0..9
+  (parens 0..9
+    (.open 0..1 '(')
+    (.body 1..8
+      (token 1..2 '+')
+      (token 3..4 '-')
+      (token 5..6 '*')
+      (token 7..8 '/'))
+    (.close 8..9 ')')))
+-- Expected
+
+# gensym'd symbol
+
+-- Input
+`(let [x# ~x]
+   x#)
+-- Input
+
+-- Expected
+(source 0..20
+  (wrap 0..20
+    (.marker 0..1 '`')
+    (.body 1..20
+      (parens 1..20
+        (.open 1..2 '(')
+        (.body 2..19
+          (token 2..5 'let')
+          (brackets 6..13
+            (.open 6..7 '[')
+            (.body 7..12
+              (token 7..9 'x#')
+              (wrap 10..12
+                (.marker 10..11 '~')
+                (.body 11..12
+                  (token 11..12 'x'))))
+            (.close 12..13 ']'))
+          (token 17..19 'x#'))
+        (.close 19..20 ')')))))
+-- Expected
+
+# Inf
+
+-- Input
+##Inf
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '##Inf'))
+-- Expected
+
+# -Inf
+
+-- Input
+##-Inf
+-- Input
+
+-- Expected
+(source 0..6
+  (token 0..6 '##-Inf'))
+-- Expected
+
+# NaN
+
+-- Input
+##NaN
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '##NaN'))
+-- Expected
+
+# True
+
+-- Input
+true
+-- Input
+
+-- Expected
+(source 0..4
+  (token 0..4 'true'))
+-- Expected
+
+# False
+
+-- Input
+false
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 'false'))
+-- Expected
+
+# Simple Char
+
+-- Input
+\a
+-- Input
+
+-- Expected
+(source 0..2
+  (token 0..2 '\a'))
+-- Expected
+
+# Special Chars
+
+-- Input
+\( \) \[ \] \{ \} \@ \" \  \,
+-- Input
+
+-- Expected
+(source 0..29
+  (token 0..2 '\(')
+  (token 3..5 '\)')
+  (token 6..8 '\[')
+  (token 9..11 '\]')
+  (token 12..14 '\{')
+  (token 15..17 '\}')
+  (token 18..20 '\@')
+  (token 21..23 '\"')
+  (token 24..26 '\ ')
+  (token 27..29 '\,'))
+-- Expected
+
+# Octal Char
+
+-- Input
+\o377
+-- Input
+
+-- Expected
+(source 0..5
+  (token 0..5 '\o377'))
+-- Expected
+
+# Named Char
+
+-- Input
+\backspace
+-- Input
+
+-- Expected
+(source 0..10
+  (token 0..10 '\backspace'))
+-- Expected
+
+# Unicode Char
+
+-- Input
+\u611B
+-- Input
+
+-- Expected
+(source 0..6
+  (token 0..6 '\u611B'))
+-- Expected
+
+# Nil
+
+-- Input
+nil
+-- Input
+
+-- Expected
+(source 0..3
+  (token 0..3 'nil'))
+-- Expected

@@ -1,0 +1,196 @@
+# Empty Anonymous Function
+
+-- Input
+#()
+-- Input
+
+-- Expected
+(source 0..3
+  (parens 0..3
+    (.open 0..2 '#(')
+    (.close 2..3 ')')))
+-- Expected
+
+# Empty Anonymous Function Gap
+
+-- Input
+#(   )
+-- Input
+
+-- Expected
+(source 0..6
+  (parens 0..6
+    (.open 0..2 '#(')
+    (.body 2..5)
+    (.close 5..6 ')')))
+-- Expected
+
+# Anonymous Function
+
+-- Input
+#(+ % 8)
+-- Input
+
+-- Expected
+(source 0..8
+  (parens 0..8
+    (.open 0..2 '#(')
+    (.body 2..7
+      (token 2..3 '+')
+      (token 4..5 '%')
+      (token 6..7 '8'))
+    (.close 7..8 ')')))
+-- Expected
+
+# Empty List
+
+-- Input
+()
+-- Input
+
+-- Expected
+(source 0..2
+  (parens 0..2
+    (.open 0..1 '(')
+    (.close 1..2 ')')))
+-- Expected
+
+# List with Keywords
+
+-- Input
+(:a :b :c)
+-- Input
+
+-- Expected
+(source 0..10
+  (parens 0..10
+    (.open 0..1 '(')
+    (.body 1..9
+      (token 1..3 ':a')
+      (token 4..6 ':b')
+      (token 7..9 ':c'))
+    (.close 9..10 ')')))
+-- Expected
+
+# Call with Anonymous Function
+
+-- Input
+(#(+ % 1) 1)
+-- Input
+
+-- Expected
+(source 0..12
+  (parens 0..12
+    (.open 0..1 '(')
+    (.body 1..11
+      (parens 1..9
+        (.open 1..3 '#(')
+        (.body 3..8
+          (token 3..4 '+')
+          (token 5..6 '%')
+          (token 7..8 '1'))
+        (.close 8..9 ')'))
+      (token 10..11 '1'))
+    (.close 11..12 ')')))
+-- Expected
+
+# Map Lookup
+
+-- Input
+({:a 1} :a)
+-- Input
+
+-- Expected
+(source 0..11
+  (parens 0..11
+    (.open 0..1 '(')
+    (.body 1..10
+      (braces 1..7
+        (.open 1..2 '{')
+        (.body 2..6
+          (token 2..4 ':a')
+          (token 5..6 '1'))
+        (.close 6..7 '}'))
+      (token 8..10 ':a'))
+    (.close 10..11 ')')))
+-- Expected
+
+# Map Lookup Alternate
+
+-- Input
+(:b {:b 2})
+-- Input
+
+-- Expected
+(source 0..11
+  (parens 0..11
+    (.open 0..1 '(')
+    (.body 1..10
+      (token 1..3 ':b')
+      (braces 4..10
+        (.open 4..5 '{')
+        (.body 5..9
+          (token 5..7 ':b')
+          (token 8..9 '2'))
+        (.close 9..10 '}')))
+    (.close 10..11 ')')))
+-- Expected
+
+# Set Lookup
+
+-- Input
+(#{:c :e} :e)
+-- Input
+
+-- Expected
+(source 0..13
+  (parens 0..13
+    (.open 0..1 '(')
+    (.body 1..12
+      (braces 1..9
+        (.open 1..3 '#{')
+        (.body 3..8
+          (token 3..5 ':c')
+          (token 6..8 ':e'))
+        (.close 8..9 '}'))
+      (token 10..12 ':e'))
+    (.close 12..13 ')')))
+-- Expected
+
+# Call with Symbol with Metadata
+
+-- Input
+(.get ^ByteBuffer b)
+-- Input
+
+-- Expected
+(source 0..20
+  (parens 0..20
+    (.open 0..1 '(')
+    (.body 1..19
+      (token 1..5 '.get')
+      (meta 6..19
+        (.marker 6..7 '^')
+        (.meta 7..17
+          (token 7..17 'ByteBuffer'))
+        (.body 18..19
+          (token 18..19 'b'))))
+    (.close 19..20 ')')))
+-- Expected
+
+# Eval
+
+-- Input
+#=(+ 1 1)
+-- Input
+
+-- Expected
+(source 0..9
+  (parens 0..9
+    (.open 0..3 '#=(')
+    (.body 3..8
+      (token 3..4 '+')
+      (token 5..6 '1')
+      (token 7..8 '1'))
+    (.close 8..9 ')')))
+-- Expected
