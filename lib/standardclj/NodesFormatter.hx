@@ -3,6 +3,7 @@ package standardclj;
 import standardclj.FormatUtil.*;
 import standardclj.NodeSearch.*;
 import standardclj.NodeUtil.*;
+import standardclj.NsData;
 import standardclj.Standard.FormatResult;
 
 /** What the formatter tracks about an opener node while it is on the paren stack. **/
@@ -47,7 +48,7 @@ class NodesFormatter {
 		`txtSkippedSoFar` is the text of the trailing comment nodes already skipped
 		on this line.
 	**/
-	static function isNsTrailingComment(node:Null<Node>, parsedNs:Dynamic, txtSkippedSoFar:String):Bool {
+	static function isNsTrailingComment(node:Null<Node>, parsedNs:Ns, txtSkippedSoFar:String):Bool {
 		final nodeTxt = commentOrDiscardText(node);
 		final outside:Null<String> = parsedNs.commentOutsideNsForm;
 		if (!hasChars(nodeTxt) || !hasChars(outside))
@@ -94,7 +95,7 @@ class NodesFormatter {
 		which is printed in place of the ns form by `NsFormatter.format`.
 		The nodes are modified in the process.
 	**/
-	public static function format(nodes:Array<Node>, parsedNs:Dynamic):FormatResult {
+	public static function format(nodes:Array<Node>, parsedNs:Ns):FormatResult {
 		final numNodes = nodes.length;
 		final hasParsedNsForm = parsedNs.nsSymbol != null;
 
@@ -506,7 +507,7 @@ class NodesFormatter {
 
 			var nsStr = null;
 			try {
-				nsStr = NsFormatter.format(parsedNs);
+				nsStr = NsFormatter.format(NsJson.toJson(parsedNs));
 			} catch (e:haxe.Exception) {
 				return Failure(e.message);
 			}

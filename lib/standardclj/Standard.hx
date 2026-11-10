@@ -1,5 +1,7 @@
 package standardclj;
 
+import standardclj.NsData;
+
 enum FormatResult {
 	/** The formatted text; `ignored` is set when the file opted out with `#_:standard-clj/ignore-file`. **/
 	Success(out:String, ignored:Bool);
@@ -16,7 +18,7 @@ class Standard {
 		final nodes = Parser.parse(input).flatten();
 		if (NsParser.lookForIgnoreFile(nodes))
 			return Success(input, true);
-		final parsedNs:Dynamic = try {
+		final parsedNs:Ns = try {
 			NsParser.parse(nodes);
 		} catch (e:haxe.Exception) {
 			return Failure(e.message);

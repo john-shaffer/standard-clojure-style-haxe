@@ -6,8 +6,8 @@ package standardclj;
 
 /** A symbol, with the platform of the reader conditional it came from. **/
 class Symbol {
-	public final symbol:String;
-	public final platform:Null<String>;
+	public var symbol:String;
+	public var platform:Null<String>;
 
 	public function new(symbol:String, platform:Null<String>) {
 		this.symbol = symbol;
@@ -40,7 +40,7 @@ class NsMetadata {
 
 /** A libspec of `:require` or `:require-macros`. **/
 class Require {
-	public final symbol:String;
+	public var symbol:String;
 	public var platform:Null<String>;
 	/** The `:as` symbol. **/
 	public var alias:Null<String>;
@@ -154,7 +154,7 @@ class GenClassOther {
 	}
 }
 
-class GenClass {
+class NsGenClass {
 	public var commentAfter:Null<String>;
 	public var commentsAbove:Null<Array<String>>;
 	public var constructors:Null<GenClassKey<Array<Constructor>>>;
@@ -184,7 +184,7 @@ class GenClass {
 class Ns {
 	public var commentOutsideNsForm:Null<String>;
 	public var docstring:Null<String>;
-	public var genClass:Null<GenClass>;
+	public var genClass:Null<NsGenClass>;
 	public var importCommentAfter:Null<String>;
 	public var importCommentsAbove:Null<Array<String>>;
 	public var imports:Null<Array<Import>>;

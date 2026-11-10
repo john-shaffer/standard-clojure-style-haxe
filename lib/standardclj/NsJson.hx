@@ -95,7 +95,7 @@ class NsJson {
 		return o;
 	}
 
-	static function genClass(g:GenClass):Dynamic {
+	static function genClass(g:NsGenClass):Dynamic {
 		final o:Dynamic = {isEmpty: g.isEmpty};
 		put(o, "commentAfter", g.commentAfter);
 		put(o, "commentsAbove", strings(g.commentsAbove));
