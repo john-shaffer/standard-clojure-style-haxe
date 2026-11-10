@@ -1,0 +1,28 @@
+# a comment on a later form is not moved into the ns
+
+--Input
+(ns foo
+  (:refer-clojure :exclude [get assoc]))
+
+(def x 1) ;; not part of the ns
+--Input
+
+--Expected
+(ns foo
+  (:refer-clojure :exclude [assoc get]))
+
+(def x 1) ;; not part of the ns
+--Expected
+
+# a comment after the ns on a later line than refer-clojure stays after the ns
+
+--Input
+(ns foo
+  (:refer-clojure :exclude [get assoc])
+  ) ;; after ns
+--Input
+
+--Expected
+(ns foo
+  (:refer-clojure :exclude [assoc get])) ;; after ns
+--Expected

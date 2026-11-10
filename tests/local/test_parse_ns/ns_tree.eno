@@ -1,0 +1,152 @@
+# ns metadata: stacked shorthand keys are all collected
+
+--Input
+(ns ^:a ^:b foo)
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "nsMetadata": [
+    {"key": ":a", "value": "true"},
+    {"key": ":b", "value": "true"}
+  ]
+}
+--Expected
+
+# ns metadata: shorthand and map before the symbol are both collected
+
+--Input
+(ns ^:a ^{:b 1} foo)
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "nsMetadata": [
+    {"key": ":a", "value": "true"},
+    {"key": ":b", "value": "1"}
+  ]
+}
+--Expected
+
+# ns metadata: the #^ marker works like ^
+
+--Input
+(ns #^:a foo)
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "nsMetadata": [
+    {"key": ":a", "value": "true"}
+  ]
+}
+--Expected
+
+# a discard between ns and the ns symbol is not the symbol
+
+--Input
+(ns #_disc
+  foo)
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo"
+}
+--Expected
+
+# ns metadata map: a discard is not a key or a value
+
+--Input
+(ns foo
+  {:a 1 #_{:x 1} :c 3})
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "nsMetadata": [
+    {"key": ":a", "value": "1"},
+    {"key": ":c", "value": "3"}
+  ]
+}
+--Expected
+
+# a discard after the symbol of a libspec is a comment after the libspec
+
+--Input
+(ns foo
+  (:require
+   [a.b #_x :refer [d c]]
+   [e.f]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requires": [
+    {
+      "symbol": "a.b",
+      "commentAfter": "#_x",
+      "refer": [
+        {"symbol": "c"},
+        {"symbol": "d"}
+      ]
+    },
+    {
+      "symbol": "e.f"
+    }
+  ]
+}
+--Expected
+
+# the comment on the keyword line of a second :import is the comment after :import
+
+--Input
+(ns foo
+  (:import
+   (java.util Date))
+  (:import ;; second
+   (java.io File)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "importCommentAfter": ";; second",
+  "imports": [
+    {
+      "package": "java.io",
+      "classes": ["File"]
+    },
+    {
+      "package": "java.util",
+      "classes": ["Date"]
+    }
+  ]
+}
+--Expected
+
+# a comment after the ns on a later line does not attach to the ns
+
+--Input
+(ns foo
+  (:refer-clojure :exclude [get assoc]))
+
+(def x 1) ;; not part of the ns
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "referClojure": {
+    "exclude": [
+      {"symbol": "assoc"},
+      {"symbol": "get"}
+    ]
+  }
+}
+--Expected
