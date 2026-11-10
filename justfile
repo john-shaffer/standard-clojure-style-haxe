@@ -9,6 +9,14 @@ build:
 check:
     nix flake check path:.
 
+# Run the CLI end-to-end smoke tests, showing the log
+cli-smoke-test:
+    nix build path:.#cli-smoke-test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'
+
+# Run the CLI unit tests, showing the log
+cli-test:
+    nix build path:.#cli-test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'
+
 # Run the tests, showing the log
 test:
     nix build path:.#test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'

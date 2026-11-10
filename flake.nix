@@ -16,8 +16,10 @@
         root = ./.;
         fileset = nixpkgs.lib.fileset.unions [
           ./cli
+          ./cli-test.hxml
           ./cli.hxml
           ./lib
+          ./scripts/cli-smoke-test.sh
           ./test
           ./test.hxml
           ./tests
@@ -26,6 +28,28 @@
     in
     {
       checks = forAllSystems (pkgs: {
+        # Read the logs and statuses written by the cli-*-run packages, so
+        # that a failure is cached and its log is easy to reach.
+        cli-smoke-tests =
+          let
+            run = self.packages.${pkgs.stdenv.hostPlatform.system}.cli-smoke-test-run;
+          in
+          pkgs.runCommand "cli-smoke-tests" { } ''
+            cat ${run}/log
+            test "$(cat ${run}/status)" = 0
+            touch $out
+          '';
+
+        cli-tests =
+          let
+            run = self.packages.${pkgs.stdenv.hostPlatform.system}.cli-test-run;
+          in
+          pkgs.runCommand "cli-tests" { } ''
+            cat ${run}/log
+            test "$(cat ${run}/status)" = 0
+            touch $out
+          '';
+
         # Reads the log and status written by test-run, so that a failure
         # is cached and its log is easy to reach.
         tests =
@@ -40,6 +64,29 @@
       });
 
       packages = forAllSystems (pkgs: {
+        # Run the CLI tests. Always succeed; the log and exit status are
+        # written to the output and judged by checks.cli-*.
+        cli-smoke-test-run = pkgs.runCommand "cli-smoke-test-run" { nativeBuildInputs = [ pkgs.neko ]; } ''
+          mkdir -p $out
+          export HOME=$TMPDIR
+          set +e
+          sh ${src}/scripts/cli-smoke-test.sh ${
+            self.packages.${pkgs.stdenv.hostPlatform.system}.standard-clj
+          }/bin/standard-clj > $out/log 2>&1
+          echo $? > $out/status
+        '';
+
+        cli-test-run = pkgs.runCommand "cli-test-run" { nativeBuildInputs = [ pkgs.haxe ]; } ''
+          mkdir -p $out
+          cp -r ${src}/. work
+          chmod -R u+w work
+          cd work
+          export HOME=$TMPDIR
+          set +e
+          haxe cli-test.hxml > $out/log 2>&1
+          echo $? > $out/status
+        '';
+
         default = self.packages.${pkgs.stdenv.hostPlatform.system}.standard-clj;
 
         standard-clj = pkgs.stdenv.mkDerivation {

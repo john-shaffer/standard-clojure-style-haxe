@@ -1,0 +1,4 @@
+-cp lib
+-cp cli
+-cp test
+--run CliTests
