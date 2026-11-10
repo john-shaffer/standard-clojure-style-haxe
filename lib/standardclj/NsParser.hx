@@ -343,13 +343,18 @@ class NsParser {
 			return result;
 		for (i in 0...root.children.length) {
 			final form = root.children[i];
-			if (form.name == "parens" && form.children[0].text == "(" && headText(form) == "ns") {
+			if (isNsForm(form)) {
 				nsForm(form);
 				trailingComments(root.children, i + 1);
 				return finish();
 			}
 		}
 		return result;
+	}
+
+	/** Is this top-level node the `(ns ...)` form? **/
+	public static function isNsForm(form:Node):Bool {
+		return form.name == "parens" && form.children[0].text == "(" && headText(form) == "ns";
 	}
 
 	// the text of the first form, which a discard or a comment must not come before
