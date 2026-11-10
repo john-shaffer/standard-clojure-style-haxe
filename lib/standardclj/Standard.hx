@@ -11,7 +11,17 @@ enum FormatResult {
 class Standard {
 	/** Formats Clojure source text. **/
 	public static function format(text:String):FormatResult {
-		return Success(text, false);
+		// replace any CRLF with LF before we do anything
+		final input = FormatUtil.crlfToLf(text);
+		final nodes = Parser.parse(input).flatten();
+		if (NsParser.lookForIgnoreFile(nodes))
+			return Success(input, true);
+		final parsedNs:Dynamic = try {
+			NsParser.parse(nodes);
+		} catch (e:haxe.Exception) {
+			return Failure(e.message);
+		}
+		return NodesFormatter.format(nodes, parsedNs);
 	}
 
 	/** Parses Clojure source text into a syntax tree. Never fails. **/
