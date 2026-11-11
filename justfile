@@ -10,7 +10,7 @@ build:
     nix build path:.
 
 # Run all checks
-check:
+check: && test
     nix flake check path:.
 
 # Run the CLI end-to-end smoke tests, showing the log
