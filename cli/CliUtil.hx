@@ -65,7 +65,7 @@ class CliUtil {
 			case Failure(reason) if (reason != null):
 				return Error(reason);
 			default:
-				return Error("Unknown error! Please help the standard-clj project by opening an issue to report this \u{1F64F}");
+				return Error("Unknown error! Please help the standard-clj project by opening an issue to report this 🙏");
 		}
 	}
 

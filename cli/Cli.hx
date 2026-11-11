@@ -240,7 +240,7 @@ https://github.com/oakmac/standard-clojure-style-js";
 
 	static function printAllFormatted(n:Int) {
 		final what = n == 1 ? "1 file" : "All " + n + " files";
-		printToStdout(Color.green(what + " formatted with Standard Clojure Style \u{1F44D}") + " " + formatDuration(Timer.stamp() - startTime));
+		printToStdout(Color.green(what + " formatted with Standard Clojure Style 👍") + " " + formatDuration(Timer.stamp() - startTime));
 	}
 
 	static function processCheck(argv:Argv):Int {
@@ -313,7 +313,7 @@ https://github.com/oakmac/standard-clojure-style-js";
 			case Failure(reason) if (reason != null):
 				printToStderr("Failed to format code: " + reason);
 			default:
-				printToStderr("Failed to format your code due to unknown error with the format() function. Please help the standard-clj project by opening an issue to report this \u{1F64F}");
+				printToStderr("Failed to format your code due to unknown error with the format() function. Please help the standard-clj project by opening an issue to report this 🙏");
 		}
 		return 1;
 	}

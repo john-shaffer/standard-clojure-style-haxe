@@ -83,7 +83,7 @@ class CliTests {
 				eq(CliUtil.normalizeLogLevel(v), "quiet");
 		});
 
-		final unknown = "error:Unknown error! Please help the standard-clj project by opening an issue to report this \u{1F64F}";
+		final unknown = "error:Unknown error! Please help the standard-clj project by opening an issue to report this 🙏";
 		test("classifyFormatResult already formatted", () -> {
 			eq(describe(CliUtil.classifyFormatResult("(def x 1)\n", Success("(def x 1)", false))), "already-formatted:(def x 1)\n");
 		});
