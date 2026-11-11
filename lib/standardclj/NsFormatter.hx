@@ -460,436 +460,458 @@ class NsFormatter {
 	// -------------------------------------------------------------------------
 	// ns
 
-	public static function format(ns:Ns):String {
-		var out = "(ns " + (ns.nsSymbol ?? "undefined");
-
-		final requireMacros = ns.requireMacros ?? [];
-		final requires = ns.requires ?? [];
-		final imports = ns.imports ?? [];
-		final numRequireMacros = requireMacros.length;
-		final numRequires = requires.length;
-		final numImports = imports.length;
-
-		var commentOutsideNsForm2:Null<String> = null;
-		final hasGenClass = ns.genClass != null;
-		final importsIsLastMainForm = numImports > 0 && !hasGenClass;
-		final requireIsLastMainForm = numRequires > 0 && !importsIsLastMainForm && !hasGenClass;
-		final requireMacrosIsLastMainForm = numRequireMacros > 0 && numRequires == 0 && numImports == 0 && !hasGenClass;
-		final referClojureIsLastMainForm = ns.referClojure != null && numRequireMacros == 0 && numRequires == 0 && numImports == 0 && !hasGenClass;
-		var trailingParensArePrinted = false;
-
-		if (ns.docstring != null)
-			out += "\n  \"" + ns.docstring + "\"";
-
-		final nsMetadata = ns.nsMetadata ?? [];
-		if (nsMetadata.length > 0) {
-			out += "\n  {";
-			for (i in 0...nsMetadata.length) {
-				final item = nsMetadata[i];
-				out += item.key + " " + item.value;
-				if (i + 1 != nsMetadata.length)
-					out += "\n   ";
-			}
-			out += "}";
-		}
-
+	/** Appends the :refer-clojure form. **/
+	static function formatReferClojureSection(ns:Ns, o:NsOutput, isLastMainForm:Bool):Void {
+		var out = o.text;
 		// FIXME - we need reader conditionals for :refer-clojure here
 		if (ns.referClojure != null) {
 			out += formatReferClojure(ns);
 
 			final c = ns.referClojureCommentAfterForm;
 			if (has(c)) {
-				if (referClojureIsLastMainForm)
-					commentOutsideNsForm2 = c;
+				if (isLastMainForm)
+					o.commentOutside = c;
 				else
 					out += " " + c;
 			}
 		}
+		o.text = out;
+	}
 
-		if (numRequireMacros > 0) {
-			final wrap = filterOnPlatform(requireMacros, ":cljs").length == numRequireMacros;
-			var rmLastLineCommentAfter:Null<String> = null;
-			final rmCommentAfter = ns.requireMacrosCommentAfter;
-			final rmCommentsAbove = ns.requireMacrosCommentsAbove;
+	/** Appends the :require-macros form. **/
+	static function formatRequireMacrosSection(ns:Ns, o:NsOutput, isLastMainForm:Bool):Void {
+		var out = o.text;
+		final requireMacros = ns.requireMacros ?? [];
+		final numRequireMacros = requireMacros.length;
+		final wrap = filterOnPlatform(requireMacros, ":cljs").length == numRequireMacros;
+		var rmLastLineCommentAfter:Null<String> = null;
+		final rmCommentAfter = ns.requireMacrosCommentAfter;
+		final rmCommentsAbove = ns.requireMacrosCommentsAbove;
 
-			var rmIndentation = "   ";
-			if (wrap) {
-				out += "\n  #?(:cljs\n";
-				out = printCommentsAbove(out, rmCommentsAbove, "     ");
-				out += "     (:require-macros";
-				if (has(rmCommentAfter))
-					out += " " + rmCommentAfter;
-				out += "\n";
-				rmIndentation = "      ";
-			} else {
-				out += "\n";
-				out = printCommentsAbove(out, rmCommentsAbove, "  ");
-				out += "  (:require-macros";
-				if (has(rmCommentAfter))
-					out += " " + rmCommentAfter;
-				out += "\n";
-			}
-
-			for (i in 0...numRequireMacros) {
-				final rm = requireMacros[i];
-				final isLast = i + 1 == numRequireMacros;
-				out += formatRequireLine(rm, rmIndentation, false);
-
-				final c = rm.commentAfter;
-				if (has(c)) {
-					if (isLast)
-						rmLastLineCommentAfter = c;
-					else
-						out += " " + c;
-				}
-				if (!isLast)
-					out += "\n";
-			}
-
-			if (!requireMacrosIsLastMainForm && !wrap) {
-				out += ")";
-			} else if (!requireMacrosIsLastMainForm && wrap) {
-				out += "))";
-			} else if (requireMacrosIsLastMainForm && !wrap) {
-				out += "))";
-				trailingParensArePrinted = true;
-			} else {
-				out += ")))";
-				trailingParensArePrinted = true;
-			}
-
-			if (has(rmLastLineCommentAfter))
-				out += " " + rmLastLineCommentAfter;
+		var rmIndentation = "   ";
+		if (wrap) {
+			out += "\n  #?(:cljs\n";
+			out = printCommentsAbove(out, rmCommentsAbove, "     ");
+			out += "     (:require-macros";
+			if (has(rmCommentAfter))
+				out += " " + rmCommentAfter;
+			out += "\n";
+			rmIndentation = "      ";
+		} else {
+			out += "\n";
+			out = printCommentsAbove(out, rmCommentsAbove, "  ");
+			out += "  (:require-macros";
+			if (has(rmCommentAfter))
+				out += " " + rmCommentAfter;
+			out += "\n";
 		}
 
-		if (numRequires > 0) {
-			var closeRequireParenTrail = ")";
-			var lastRequireHasComment = false;
-			var lastRequireComment:Null<String> = null;
-			final reqPlatforms = getPlatformsFromArray(requires);
-			final numPlatforms = reqPlatforms.length;
-			final requireCommentsAbove = ns.requireCommentsAbove;
-			final requireCommentAfter = ns.requireCommentAfter;
+		for (i in 0...numRequireMacros) {
+			final rm = requireMacros[i];
+			final isLast = i + 1 == numRequireMacros;
+			out += formatRequireLine(rm, rmIndentation, false);
 
-			var allRequiresUnderOnePlatform = false;
-			if (numPlatforms == 1) {
-				if (numRequires == filterOnPlatform(requires, reqPlatforms[0]).length)
-					allRequiresUnderOnePlatform = true;
+			final c = rm.commentAfter;
+			if (has(c)) {
+				if (isLast)
+					rmLastLineCommentAfter = c;
+				else
+					out += " " + c;
 			}
+			if (!isLast)
+				out += "\n";
+		}
 
-			var requireLineIndentation = "   ";
-			if (allRequiresUnderOnePlatform) {
-				out += "\n  #?(" + reqPlatforms[0];
-				if (size(requireCommentsAbove) > 0)
-					out += "\n     " + requireCommentsAbove.join("\n     ");
-				out += "\n     (:require";
-				if (has(requireCommentAfter))
-					out += " " + requireCommentAfter;
-				out += "\n";
-				requireLineIndentation = "      ";
-			} else {
-				if (size(requireCommentsAbove) > 0)
-					out += "\n  " + requireCommentsAbove.join("\n  ");
-				out += "\n  (:require";
-				if (has(requireCommentAfter))
-					out += " " + requireCommentAfter;
-				out += "\n";
+		if (!isLastMainForm && !wrap) {
+			out += ")";
+		} else if (!isLastMainForm && wrap) {
+			out += "))";
+		} else if (isLastMainForm && !wrap) {
+			out += "))";
+			o.closesNs = true;
+		} else {
+			out += ")))";
+			o.closesNs = true;
+		}
+
+		if (has(rmLastLineCommentAfter))
+			out += " " + rmLastLineCommentAfter;
+		o.text = out;
+	}
+
+	/** Appends the :require form. **/
+	static function formatRequireSection(ns:Ns, o:NsOutput, isLastMainForm:Bool):Void {
+		var out = o.text;
+		final requires = ns.requires ?? [];
+		final numRequires = requires.length;
+		var closeRequireParenTrail = ")";
+		var lastRequireHasComment = false;
+		var lastRequireComment:Null<String> = null;
+		final reqPlatforms = getPlatformsFromArray(requires);
+		final numPlatforms = reqPlatforms.length;
+		final requireCommentsAbove = ns.requireCommentsAbove;
+		final requireCommentAfter = ns.requireCommentAfter;
+
+		var allRequiresUnderOnePlatform = false;
+		if (numPlatforms == 1) {
+			if (numRequires == filterOnPlatform(requires, reqPlatforms[0]).length)
+				allRequiresUnderOnePlatform = true;
+		}
+
+		var requireLineIndentation = "   ";
+		if (allRequiresUnderOnePlatform) {
+			out += "\n  #?(" + reqPlatforms[0];
+			if (size(requireCommentsAbove) > 0)
+				out += "\n     " + requireCommentsAbove.join("\n     ");
+			out += "\n     (:require";
+			if (has(requireCommentAfter))
+				out += " " + requireCommentAfter;
+			out += "\n";
+			requireLineIndentation = "      ";
+		} else {
+			if (size(requireCommentsAbove) > 0)
+				out += "\n  " + requireCommentsAbove.join("\n  ");
+			out += "\n  (:require";
+			if (has(requireCommentAfter))
+				out += " " + requireCommentAfter;
+			out += "\n";
+		}
+
+		for (requiresIdx in 0...numRequires) {
+			final req = requires[requiresIdx];
+			// NOTE: I am not sure this works correctly with reader conditionals
+			final isLastRequire1 = requiresIdx + 1 == numRequires;
+			final commentAfter = req.commentAfter;
+			final hasComment = has(commentAfter);
+
+			if (!has(req.platform) || allRequiresUnderOnePlatform) {
+				out += formatRequireLine(req, requireLineIndentation, false);
+
+				if (hasComment && !isLastRequire1) {
+					out += " " + commentAfter + "\n";
+				} else if (isLastRequire1 && hasComment && isLastMainForm && !allRequiresUnderOnePlatform) {
+					closeRequireParenTrail = ")) " + commentAfter;
+					o.closesNs = true;
+				} else if (isLastRequire1 && hasComment) {
+					// NOTE: closeRequireParenTrail is decided below from these two flags
+					lastRequireComment = commentAfter;
+					lastRequireHasComment = true;
+				} else if (isLastRequire1 && !hasComment) {
+					closeRequireParenTrail = ")";
+				} else {
+					out += "\n";
+				}
 			}
+		}
 
-			for (requiresIdx in 0...numRequires) {
-				final req = requires[requiresIdx];
-				// NOTE: I am not sure this works correctly with reader conditionals
-				final isLastRequire1 = requiresIdx + 1 == numRequires;
-				final commentAfter = req.commentAfter;
-				final hasComment = has(commentAfter);
+		final requireBlockHasReaderConditionals = numPlatforms > 0;
+		final useStandardReaderConditional = onlyOneRequirePerPlatform(requires);
 
-				if (!has(req.platform) || allRequiresUnderOnePlatform) {
-					out += formatRequireLine(req, requireLineIndentation, false);
+		if (!allRequiresUnderOnePlatform) {
+			// use standard reader conditional #?(
+			if (useStandardReaderConditional) {
+				for (platformIdx in 0...numPlatforms) {
+					final platform = reqPlatforms[platformIdx];
+					final isLastPlatform = platformIdx + 1 == numPlatforms;
 
-					if (hasComment && !isLastRequire1) {
-						out += " " + commentAfter + "\n";
-					} else if (isLastRequire1 && hasComment && requireIsLastMainForm && !allRequiresUnderOnePlatform) {
-						closeRequireParenTrail = ")) " + commentAfter;
-						trailingParensArePrinted = true;
-					} else if (isLastRequire1 && hasComment) {
-						// NOTE: closeRequireParenTrail is decided below from these two flags
-						lastRequireComment = commentAfter;
-						lastRequireHasComment = true;
-					} else if (isLastRequire1 && !hasComment) {
-						closeRequireParenTrail = ")";
+					// only look at requires for this platform
+					final req = filterOnPlatform(requires, platform)[0];
+					final commentAfter = req.commentAfter;
+
+					if (platformIdx == 0) {
+						out = StringTools.trim(out);
+						out += "\n   #?(" + platform;
 					} else {
-						out += "\n";
+						out += "\n      " + platform;
+					}
+
+					// a comment above the libspec: print the platform keyword alone, then the
+					// comment(s) and the libspec on their own lines inside the reader conditional
+					if (size(req.commentsAbove) > 0)
+						out += "\n" + formatRequireLine(req, "      ", true);
+					else
+						out += " " + formatRequireLine(req, "", true);
+
+					// a comment after the last platform's libspec must be printed after the
+					// closing parens (see closeRequireParenTrail below), otherwise it would
+					// comment them out
+					if (has(commentAfter) && isLastPlatform) {
+						lastRequireHasComment = true;
+						lastRequireComment = commentAfter;
+					} else if (has(commentAfter)) {
+						out += " " + commentAfter;
 					}
 				}
 			}
+			// use splicing reader conditional #?@(
+			else {
+				for (platformIdx in 0...numPlatforms) {
+					final platform = reqPlatforms[platformIdx];
+					final isLastPlatform = platformIdx + 1 == numPlatforms;
 
-			final requireBlockHasReaderConditionals = numPlatforms > 0;
-			final useStandardReaderConditional = onlyOneRequirePerPlatform(requires);
+					if (platformIdx == 0) {
+						out = StringTools.trim(out);
+						out += "\n   #?@(" + platform + "\n       [";
+					} else {
+						out += "\n\n       " + platform + "\n       [";
+					}
 
-			if (!allRequiresUnderOnePlatform) {
-				// use standard reader conditional #?(
-				if (useStandardReaderConditional) {
-					for (platformIdx in 0...numPlatforms) {
-						final platform = reqPlatforms[platformIdx];
-						final isLastPlatform = platformIdx + 1 == numPlatforms;
-
-						// only look at requires for this platform
-						final req = filterOnPlatform(requires, platform)[0];
+					// only look at requires for this platform
+					final platformRequires = filterOnPlatform(requires, platform);
+					final numFilteredReqs = platformRequires.length;
+					var printedFirstReqLine = false;
+					var printPlatformClosingBracket = true;
+					for (reqIdx2 in 0...numFilteredReqs) {
+						final req = platformRequires[reqIdx2];
+						final isLastForPlatform = reqIdx2 + 1 == numFilteredReqs;
 						final commentAfter = req.commentAfter;
+						final hasComment = has(commentAfter);
 
-						if (platformIdx == 0) {
-							out = StringTools.trim(out);
-							out += "\n   #?(" + platform;
+						if (printedFirstReqLine) {
+							out += formatRequireLine(req, "        ", false);
 						} else {
-							out += "\n      " + platform;
+							printedFirstReqLine = true;
+							out += formatRequireLine(req, "", false);
 						}
 
-						// a comment above the libspec: print the platform keyword alone, then the
-						// comment(s) and the libspec on their own lines inside the reader conditional
-						if (size(req.commentsAbove) > 0)
-							out += "\n" + formatRequireLine(req, "      ", true);
-						else
-							out += " " + formatRequireLine(req, "", true);
-
-						// a comment after the last platform's libspec must be printed after the
-						// closing parens (see closeRequireParenTrail below), otherwise it would
-						// comment them out
-						if (has(commentAfter) && isLastPlatform) {
+						if (hasComment && !isLastForPlatform) {
+							out += " " + commentAfter + "\n";
+						} else if (hasComment && isLastForPlatform && !isLastPlatform) {
+							out += "] " + commentAfter;
+							printPlatformClosingBracket = false;
+						} else if (hasComment && isLastForPlatform && (isLastPlatform || isLastMainForm)) {
 							lastRequireHasComment = true;
 							lastRequireComment = commentAfter;
-						} else if (has(commentAfter)) {
-							out += " " + commentAfter;
-						}
-					}
-				}
-				// use splicing reader conditional #?@(
-				else {
-					for (platformIdx in 0...numPlatforms) {
-						final platform = reqPlatforms[platformIdx];
-						final isLastPlatform = platformIdx + 1 == numPlatforms;
-
-						if (platformIdx == 0) {
-							out = StringTools.trim(out);
-							out += "\n   #?@(" + platform + "\n       [";
+						} else if (isLastForPlatform && hasComment) {
+							closeRequireParenTrail = ") " + commentAfter;
+						} else if (isLastForPlatform && !hasComment) {
+							closeRequireParenTrail = "]";
 						} else {
-							out += "\n\n       " + platform + "\n       [";
+							out += "\n";
 						}
-
-						// only look at requires for this platform
-						final platformRequires = filterOnPlatform(requires, platform);
-						final numFilteredReqs = platformRequires.length;
-						var printedFirstReqLine = false;
-						var printPlatformClosingBracket = true;
-						for (reqIdx2 in 0...numFilteredReqs) {
-							final req = platformRequires[reqIdx2];
-							final isLastForPlatform = reqIdx2 + 1 == numFilteredReqs;
-							final commentAfter = req.commentAfter;
-							final hasComment = has(commentAfter);
-
-							if (printedFirstReqLine) {
-								out += formatRequireLine(req, "        ", false);
-							} else {
-								printedFirstReqLine = true;
-								out += formatRequireLine(req, "", false);
-							}
-
-							if (hasComment && !isLastForPlatform) {
-								out += " " + commentAfter + "\n";
-							} else if (hasComment && isLastForPlatform && !isLastPlatform) {
-								out += "] " + commentAfter;
-								printPlatformClosingBracket = false;
-							} else if (hasComment && isLastForPlatform && (isLastPlatform || requireIsLastMainForm)) {
-								lastRequireHasComment = true;
-								lastRequireComment = commentAfter;
-							} else if (isLastForPlatform && hasComment) {
-								closeRequireParenTrail = ") " + commentAfter;
-							} else if (isLastForPlatform && !hasComment) {
-								closeRequireParenTrail = "]";
-							} else {
-								out += "\n";
-							}
-						}
-
-						if (printPlatformClosingBracket)
-							out += "]";
 					}
+
+					if (printPlatformClosingBracket)
+						out += "]";
 				}
 			}
+		}
 
-			// closeRequireParenTrail can be one of six options:
-			// - )             <-- no reader conditional, no comment on the last item, not the last main form
-			// - ) <comment>   <-- no reader conditional, comment on the last itm, not the last main form
-			// - ))            <-- reader conditional, no comment on the last itm, not the last main form
-			// - )) <comment>  <-- reader conditional, comment on last itm, not the last main form
-			// - )))           <-- reader conditional, no comment on last itm, :require is last main form
-			// - ))) <comment> <-- reader conditional, comment on last itm, :require is last main form
-			if (!requireBlockHasReaderConditionals && !lastRequireHasComment && !requireIsLastMainForm) {
-				closeRequireParenTrail = ")";
-			} else if (!requireBlockHasReaderConditionals && lastRequireHasComment && !requireIsLastMainForm) {
-				closeRequireParenTrail = ") " + lastRequireComment;
-			} else if (requireBlockHasReaderConditionals && !lastRequireHasComment && !requireIsLastMainForm) {
-				closeRequireParenTrail = "))";
-			} else if (requireBlockHasReaderConditionals && lastRequireHasComment && !requireIsLastMainForm) {
-				closeRequireParenTrail = ")) " + lastRequireComment;
-			} else if (requireBlockHasReaderConditionals && !lastRequireHasComment && requireIsLastMainForm) {
-				closeRequireParenTrail = ")))";
-				trailingParensArePrinted = true;
-			} else if (requireBlockHasReaderConditionals && lastRequireHasComment && requireIsLastMainForm) {
-				closeRequireParenTrail = ")))" + " " + lastRequireComment;
-				trailingParensArePrinted = true;
+		// closeRequireParenTrail can be one of six options:
+		// - )             <-- no reader conditional, no comment on the last item, not the last main form
+		// - ) <comment>   <-- no reader conditional, comment on the last itm, not the last main form
+		// - ))            <-- reader conditional, no comment on the last itm, not the last main form
+		// - )) <comment>  <-- reader conditional, comment on last itm, not the last main form
+		// - )))           <-- reader conditional, no comment on last itm, :require is last main form
+		// - ))) <comment> <-- reader conditional, comment on last itm, :require is last main form
+		if (!requireBlockHasReaderConditionals && !lastRequireHasComment && !isLastMainForm) {
+			closeRequireParenTrail = ")";
+		} else if (!requireBlockHasReaderConditionals && lastRequireHasComment && !isLastMainForm) {
+			closeRequireParenTrail = ") " + lastRequireComment;
+		} else if (requireBlockHasReaderConditionals && !lastRequireHasComment && !isLastMainForm) {
+			closeRequireParenTrail = "))";
+		} else if (requireBlockHasReaderConditionals && lastRequireHasComment && !isLastMainForm) {
+			closeRequireParenTrail = ")) " + lastRequireComment;
+		} else if (requireBlockHasReaderConditionals && !lastRequireHasComment && isLastMainForm) {
+			closeRequireParenTrail = ")))";
+			o.closesNs = true;
+		} else if (requireBlockHasReaderConditionals && lastRequireHasComment && isLastMainForm) {
+			closeRequireParenTrail = ")))" + " " + lastRequireComment;
+			o.closesNs = true;
+		}
+
+		out = StringTools.trim(out);
+		out += closeRequireParenTrail;
+		o.text = out;
+	}
+
+	/** Appends the :import form. **/
+	static function formatImportSection(ns:Ns, o:NsOutput, isLastMainForm:Bool):Void {
+		var out = o.text;
+		final imports = ns.imports ?? [];
+		final numImports = imports.length;
+		final nonPlatformSpecificImports = filterOnPlatform(imports, null);
+		final numNonPlatformSpecificImports = nonPlatformSpecificImports.length;
+		final importPlatforms = getPlatformsFromArray(imports);
+		final numImportPlatforms = importPlatforms.length;
+		final importSectionHasReaderConditionals = numImportPlatforms > 0;
+		final placeReaderConditionalOutsideOfImport = numImportPlatforms == 1 && numNonPlatformSpecificImports == 0;
+
+		// a comment after the last line of the :import section must be printed
+		// after the closing parens, otherwise it would comment them out
+		var lastImportLineCommentAfter:Null<String> = null;
+		var isImportKeywordPrinted = false;
+
+		for (importsIdx in 0...numNonPlatformSpecificImports) {
+			if (!isImportKeywordPrinted) {
+				out += "\n" + formatImportKeyword(ns, "  ") + "\n";
+				isImportKeywordPrinted = true;
 			}
 
-			out = StringTools.trim(out);
-			out += closeRequireParenTrail;
-		} // end :require printing
+			final imp = nonPlatformSpecificImports[importsIdx];
+			final isLastImport = importsIdx + 1 == numNonPlatformSpecificImports;
+			final classes = imp.classes;
 
-		if (numImports > 0) {
-			final nonPlatformSpecificImports = filterOnPlatform(imports, null);
-			final numNonPlatformSpecificImports = nonPlatformSpecificImports.length;
-			final importPlatforms = getPlatformsFromArray(imports);
-			final numImportPlatforms = importPlatforms.length;
-			final importSectionHasReaderConditionals = numImportPlatforms > 0;
-			final placeReaderConditionalOutsideOfImport = numImportPlatforms == 1 && numNonPlatformSpecificImports == 0;
+			out = printCommentsAbove(out, imp.commentsAbove, "   ");
+			if (imp.packageName == "") {
+				// a class in the default package is printed as a bare symbol
+				out += "   " + classes.join(" ");
+			} else {
+				out += "   (" + imp.packageName;
+				for (className in classes)
+					out += " " + className;
+				out += ")";
+			}
 
-			// a comment after the last line of the :import section must be printed
-			// after the closing parens, otherwise it would comment them out
-			var lastImportLineCommentAfter:Null<String> = null;
-			var isImportKeywordPrinted = false;
+			final c = imp.commentAfter;
+			if (has(c)) {
+				if (isLastImport && !importSectionHasReaderConditionals)
+					lastImportLineCommentAfter = c;
+				else
+					out += " " + c;
+			}
 
-			for (importsIdx in 0...numNonPlatformSpecificImports) {
-				if (!isImportKeywordPrinted) {
-					out += "\n" + formatImportKeyword(ns, "  ") + "\n";
-					isImportKeywordPrinted = true;
+			if (!isLastImport)
+				out += "\n";
+		}
+
+		var isFirstPlatform = true;
+
+		for (platformIdx in 0...numImportPlatforms) {
+			final platformStr = importPlatforms[platformIdx];
+			final isLastPlatform = platformIdx + 1 == numImportPlatforms;
+			final importsForThisPlatform = filterOnPlatform(imports, platformStr);
+			final numImports2 = importsForThisPlatform.length;
+
+			if (placeReaderConditionalOutsideOfImport) {
+				out += "\n  #?(" + platformStr + "\n" + formatImportKeyword(ns, "     ");
+				isImportKeywordPrinted = true;
+			} else {
+				if (isFirstPlatform) {
+					if (!isImportKeywordPrinted) {
+						out += "\n" + formatImportKeyword(ns, "  ");
+						isImportKeywordPrinted = true;
+					}
+					out += "\n   #?@(" + platformStr;
+					isFirstPlatform = false;
+				} else {
+					out += "\n\n       " + platformStr;
 				}
+				out += "\n";
 
-				final imp = nonPlatformSpecificImports[importsIdx];
-				final isLastImport = importsIdx + 1 == numNonPlatformSpecificImports;
+				// comments above the first import of this platform are printed above the opening bracket
+				if (numImports2 > 0)
+					out = printCommentsAbove(out, importsForThisPlatform[0].commentsAbove, "       ");
+				out += "       [";
+			}
+
+			for (idx2 in 0...numImports2) {
+				final imp = importsForThisPlatform[idx2];
+				final isLastImport2 = idx2 + 1 == numImports2;
 				final classes = imp.classes;
 
-				out = printCommentsAbove(out, imp.commentsAbove, "   ");
+				if (placeReaderConditionalOutsideOfImport) {
+					out += "\n";
+					out = printCommentsAbove(out, imp.commentsAbove, "      ");
+					out += "      ";
+				} else if (idx2 > 0) {
+					out += "\n";
+					out = printCommentsAbove(out, imp.commentsAbove, "        ");
+					out += "        ";
+				}
+
 				if (imp.packageName == "") {
 					// a class in the default package is printed as a bare symbol
-					out += "   " + classes.join(" ");
+					out += classes.join(" ");
 				} else {
-					out += "   (" + imp.packageName;
-					for (className in classes)
-						out += " " + className;
-					out += ")";
+					out += "(" + imp.packageName + " " + classes.join(" ") + ")";
 				}
+
+				if (isLastImport2 && !placeReaderConditionalOutsideOfImport)
+					out += "]";
 
 				final c = imp.commentAfter;
 				if (has(c)) {
-					if (isLastImport && !importSectionHasReaderConditionals)
+					if (isLastImport2 && isLastPlatform)
 						lastImportLineCommentAfter = c;
 					else
 						out += " " + c;
 				}
-
-				if (!isLastImport)
-					out += "\n";
 			}
-
-			var isFirstPlatform = true;
-
-			for (platformIdx in 0...numImportPlatforms) {
-				final platformStr = importPlatforms[platformIdx];
-				final isLastPlatform = platformIdx + 1 == numImportPlatforms;
-				final importsForThisPlatform = filterOnPlatform(imports, platformStr);
-				final numImports2 = importsForThisPlatform.length;
-
-				if (placeReaderConditionalOutsideOfImport) {
-					out += "\n  #?(" + platformStr + "\n" + formatImportKeyword(ns, "     ");
-					isImportKeywordPrinted = true;
-				} else {
-					if (isFirstPlatform) {
-						if (!isImportKeywordPrinted) {
-							out += "\n" + formatImportKeyword(ns, "  ");
-							isImportKeywordPrinted = true;
-						}
-						out += "\n   #?@(" + platformStr;
-						isFirstPlatform = false;
-					} else {
-						out += "\n\n       " + platformStr;
-					}
-					out += "\n";
-
-					// comments above the first import of this platform are printed above the opening bracket
-					if (numImports2 > 0)
-						out = printCommentsAbove(out, importsForThisPlatform[0].commentsAbove, "       ");
-					out += "       [";
-				}
-
-				for (idx2 in 0...numImports2) {
-					final imp = importsForThisPlatform[idx2];
-					final isLastImport2 = idx2 + 1 == numImports2;
-					final classes = imp.classes;
-
-					if (placeReaderConditionalOutsideOfImport) {
-						out += "\n";
-						out = printCommentsAbove(out, imp.commentsAbove, "      ");
-						out += "      ";
-					} else if (idx2 > 0) {
-						out += "\n";
-						out = printCommentsAbove(out, imp.commentsAbove, "        ");
-						out += "        ";
-					}
-
-					if (imp.packageName == "") {
-						// a class in the default package is printed as a bare symbol
-						out += classes.join(" ");
-					} else {
-						out += "(" + imp.packageName + " " + classes.join(" ") + ")";
-					}
-
-					if (isLastImport2 && !placeReaderConditionalOutsideOfImport)
-						out += "]";
-
-					final c = imp.commentAfter;
-					if (has(c)) {
-						if (isLastImport2 && isLastPlatform)
-							lastImportLineCommentAfter = c;
-						else
-							out += " " + c;
-					}
-				}
-			}
-
-			// closeImportParenTrail can be one of four options:
-			// - )    <-- no reader conditional, :gen-class follows
-			// - ))   <-- reader conditional, :gen-class follows (closes the #?@( or #?( form and the :import form)
-			// - ))   <-- no reader conditional, :import is the last main form
-			// - )))  <-- reader conditional, :import is the last main form
-			var closeImportParenTrail = ")";
-			if (importsIsLastMainForm && importSectionHasReaderConditionals) {
-				closeImportParenTrail = ")))";
-				trailingParensArePrinted = true;
-			} else if (importsIsLastMainForm) {
-				closeImportParenTrail = "))";
-				trailingParensArePrinted = true;
-			} else if (importSectionHasReaderConditionals) {
-				closeImportParenTrail = "))";
-			}
-
-			out += closeImportParenTrail;
-
-			if (has(lastImportLineCommentAfter))
-				out += " " + lastImportLineCommentAfter;
-		} // end :import section
-
-		if (hasGenClass) {
-			final genClass = ns.genClass;
-			out += "\n";
-			out = formatGenClass(out, genClass);
-			trailingParensArePrinted = true;
 		}
 
-		if (!trailingParensArePrinted)
-			out += ")";
+		// closeImportParenTrail can be one of four options:
+		// - )    <-- no reader conditional, :gen-class follows
+		// - ))   <-- reader conditional, :gen-class follows (closes the #?@( or #?( form and the :import form)
+		// - ))   <-- no reader conditional, :import is the last main form
+		// - )))  <-- reader conditional, :import is the last main form
+		var closeImportParenTrail = ")";
+		if (isLastMainForm && importSectionHasReaderConditionals) {
+			closeImportParenTrail = ")))";
+			o.closesNs = true;
+		} else if (isLastMainForm) {
+			closeImportParenTrail = "))";
+			o.closesNs = true;
+		} else if (importSectionHasReaderConditionals) {
+			closeImportParenTrail = "))";
+		}
 
-		if (has(commentOutsideNsForm2))
-			out += " " + commentOutsideNsForm2;
+		out += closeImportParenTrail;
 
-		return out;
+		if (has(lastImportLineCommentAfter))
+			out += " " + lastImportLineCommentAfter;
+		o.text = out;
+	}
+
+	public static function format(ns:Ns):String {
+		final o = new NsOutput("(ns " + (ns.nsSymbol ?? "undefined"));
+
+		final numRequireMacros = (ns.requireMacros ?? []).length;
+		final numRequires = (ns.requires ?? []).length;
+		final numImports = (ns.imports ?? []).length;
+
+		final hasGenClass = ns.genClass != null;
+		final importsIsLastMainForm = numImports > 0 && !hasGenClass;
+		final requireIsLastMainForm = numRequires > 0 && !importsIsLastMainForm && !hasGenClass;
+		final requireMacrosIsLastMainForm = numRequireMacros > 0 && numRequires == 0 && numImports == 0 && !hasGenClass;
+		final referClojureIsLastMainForm = ns.referClojure != null && numRequireMacros == 0 && numRequires == 0 && numImports == 0 && !hasGenClass;
+
+		if (ns.docstring != null)
+			o.text += "\n  \"" + ns.docstring + "\"";
+
+		final nsMetadata = ns.nsMetadata ?? [];
+		if (nsMetadata.length > 0) {
+			o.text += "\n  {";
+			for (i in 0...nsMetadata.length) {
+				final item = nsMetadata[i];
+				o.text += item.key + " " + item.value;
+				if (i + 1 != nsMetadata.length)
+					o.text += "\n   ";
+			}
+			o.text += "}";
+		}
+
+		if (ns.referClojure != null)
+			formatReferClojureSection(ns, o, referClojureIsLastMainForm);
+		if (numRequireMacros > 0)
+			formatRequireMacrosSection(ns, o, requireMacrosIsLastMainForm);
+		if (numRequires > 0)
+			formatRequireSection(ns, o, requireIsLastMainForm);
+		if (numImports > 0)
+			formatImportSection(ns, o, importsIsLastMainForm);
+
+		if (hasGenClass) {
+			o.text = formatGenClass(o.text + "\n", ns.genClass);
+			o.closesNs = true;
+		}
+
+		if (!o.closesNs)
+			o.text += ")";
+
+		if (has(o.commentOutside))
+			o.text += " " + o.commentOutside;
+
+		return o.text;
 	}
 
 	// -------------------------------------------------------------------------
@@ -1050,5 +1072,18 @@ class NsFormatter {
 		final hasComment = has(commentAfterGenClass);
 		final closer = behindReaderConditional ? ")))" : "))";
 		return out + closer + (hasComment ? " " + commentAfterGenClass : "");
+	}
+}
+
+/** The text of an ns form as it is built, and what the sections that print it found out. **/
+private class NsOutput {
+	/** A section printed the parens that close the ns form. **/
+	public var closesNs = false;
+	/** A comment after the last form, printed after the ns form closes. **/
+	public var commentOutside:Null<String>;
+	public var text:String;
+
+	public function new(text:String) {
+		this.text = text;
 	}
 }
