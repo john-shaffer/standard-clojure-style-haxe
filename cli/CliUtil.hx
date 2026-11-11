@@ -133,15 +133,16 @@ class CliUtil {
 	/**
 		The include and ignore patterns to use, after applying precedence:
 		any command-line file selection replaces the configured `include`, and
-		a command-line `--ignore` replaces the configured `ignore`.
+		a command-line `--ignore` replaces the configured `ignore`. With no
+		file selection at all, the current directory is included.
 		`argv.positional` must not contain the command.
 	**/
 	public static function selectPatterns(argv:Argv):{include:Array<String>, ignore:Array<String>} {
 		final cliIncludeWasPassed = argv.include != null;
 		final anyCliFileSelection = argv.positional.length > 0 || cliIncludeWasPassed;
 		var include = cliIncludeWasPassed ? argv.include : [];
-		if (!anyCliFileSelection && argv.optionsLoadedViaConfigFile && argv.includeFromConfig != null)
-			include = argv.includeFromConfig;
+		if (!anyCliFileSelection)
+			include = argv.optionsLoadedViaConfigFile && argv.includeFromConfig != null ? argv.includeFromConfig : ["."];
 		var ignore = [];
 		if (argv.ignore != null)
 			ignore = argv.ignore;
