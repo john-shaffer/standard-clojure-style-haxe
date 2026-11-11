@@ -177,3 +177,287 @@
   ]
 }
 --Expected
+
+# a prefix list inside a reader conditional gives its requires the platform
+
+--Input
+(ns foo
+  (:require
+   #?(:clj [clojure [string :as str] set])
+   [other.lib]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requires": [
+    {
+      "symbol": "clojure.set",
+      "platform": ":clj"
+    },
+    {
+      "symbol": "clojure.string",
+      "as": "str",
+      "platform": ":clj"
+    },
+    {
+      "symbol": "other.lib"
+    }
+  ]
+}
+--Expected
+
+# require-macros :refer :all is refer all, as in :require
+
+--Input
+(ns foo
+  (:require-macros
+   [a.macros :refer :all :as m]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "requireMacros": [
+    {
+      "symbol": "a.macros",
+      "as": "m",
+      "refer": "all"
+    }
+  ]
+}
+--Expected
+
+# an own-line discard and the comment after it travel together in :import
+
+--Input
+(ns foo
+  (:import
+   (java.util UUID)
+   #_x ;; about Date
+   (java.util Date)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "imports": [
+    {
+      "package": "java.util",
+      "classes": ["Date", "UUID"],
+      "commentsAbove": ["#_x ;; about Date"]
+    }
+  ]
+}
+--Expected
+
+# comment after a later form on the ns close line is not part of the ns
+
+--Input
+(ns a (:require [b])) (def x) ;; c
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b"
+    }
+  ]
+}
+--Expected
+
+# require :as must be followed by a symbol
+
+--Input
+(ns a (:require [b :as :refer c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :as must be followed by a symbol."
+}
+--Expected
+
+# require :as at the end of a libspec is an error
+
+--Input
+(ns a (:require [b :as]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :as must be followed by a symbol."
+}
+--Expected
+
+# require :include-macros must be followed by a boolean
+
+--Input
+(ns a (:require [b :include-macros yes]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :include-macros must be followed by true or false."
+}
+--Expected
+
+# comment after a multi-line libspec belongs to the libspec
+
+--Input
+(ns a
+  (:require [b
+             :as c] ;; x
+            [d]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b",
+      "as": "c",
+      "commentAfter": ";; x"
+    },
+    {
+      "symbol": "d"
+    }
+  ]
+}
+--Expected
+
+# require unknown option is an error
+
+--Input
+(ns a (:require [b :foo bar]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :foo is not a supported option."
+}
+--Expected
+
+# require option that is not a keyword is an error
+
+--Input
+(ns a (:require [b :as c "d"]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require options must be keywords."
+}
+--Expected
+
+# require :refer must be followed by :all or a collection
+
+--Input
+(ns a (:require [b :refer c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :refer must be followed by :all or a collection."
+}
+--Expected
+
+# require :rename must be followed by a collection
+
+--Input
+(ns a (:require [b :rename c]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :rename must be followed by a collection."
+}
+--Expected
+
+# require :rename needs pairs of symbols
+
+--Input
+(ns a (:require [b :rename {c d, e}]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require :rename must be followed by pairs of symbols."
+}
+--Expected
+
+# require-macros unknown option is an error
+
+--Input
+(ns a (:require-macros [b :foo bar]))
+--Input
+
+--Expected
+{
+  "parsingShouldError": true,
+  "errorMessage": ":require-macros :foo is not a supported option."
+}
+--Expected
+
+# comment after a multi-line prefix list entry belongs to the entry
+
+--Input
+(ns a
+  (:require [b
+             [c
+              :as d] ;; x
+             [e]]))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "requires": [
+    {
+      "symbol": "b.c",
+      "as": "d",
+      "commentAfter": ";; x"
+    },
+    {
+      "symbol": "b.e"
+    }
+  ]
+}
+--Expected
+
+# comment after a multi-line import package list belongs to the package
+
+--Input
+(ns a
+  (:import (b C
+              D) ;; x
+           (e F)))
+--Input
+
+--Expected
+{
+  "nsSymbol": "a",
+  "imports": [
+    {
+      "package": "b",
+      "classes": ["C", "D"],
+      "commentAfter": ";; x"
+    },
+    {
+      "package": "e",
+      "classes": ["F"]
+    }
+  ]
+}
+--Expected

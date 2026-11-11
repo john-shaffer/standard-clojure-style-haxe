@@ -49,7 +49,13 @@ if ! grep -q "Unable to load config file: missing.edn" "$dir/stderr"; then
   fails=$((fails + 1))
 fi
 
+expect "list with no arguments or config uses the current directory" 0 "$dir/src/a.clj
+$dir/src/gen/g.clj
+$dir/test/t.cljs" list
+mkdir empty
+cd empty || exit 2
 expect "check with no files exits 1" 1 "standard-clj check [dev]" check
+cd "$dir" || exit 2
 expect "no command exits 1" 1 ""
 expect "version" 0 "[dev]" --version
 expect "fix - with empty stdin exits 1" 1 "" fix -

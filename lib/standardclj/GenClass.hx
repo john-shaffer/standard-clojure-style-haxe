@@ -1,6 +1,7 @@
 package standardclj;
 
 import standardclj.NodeUtil.*;
+import standardclj.NsData;
 
 /** Parsing of the values of `:gen-class` keys in an ns form. **/
 class GenClass {
@@ -29,10 +30,10 @@ class GenClass {
 		return s == null || s == "";
 	}
 
-	public static function parseConstructors(mapNode:Node):Array<Dynamic> {
+	public static function parseConstructors(mapNode:Node):Array<Constructor> {
 		final constructorErrorMessage = ":gen-class :constructors must be a map of parameter and super-parameter vectors.";
 		final pairs = mapPairs(mapNode, ":gen-class :constructors must contain parameter and super-parameter vector pairs.");
-		final constructors:Array<Dynamic> = [];
+		final constructors:Array<Constructor> = [];
 		for (pair in pairs) {
 			final parameterTypesForm = splitMetadataForm(pair[0]);
 			final parameterTypesNode = parameterTypesForm.bodyNode;
@@ -41,11 +42,10 @@ class GenClass {
 			if (!isVectorLiteral(parameterTypesNode) || !isVectorLiteral(superParameterTypesNode))
 				throw new haxe.Exception(constructorErrorMessage);
 
-			final constructor:Dynamic = {};
+			final constructor = new Constructor(parseTypeVector(parameterTypesNode, constructorErrorMessage),
+				parseTypeVector(superParameterTypesNode, constructorErrorMessage));
 			if (!empty(parameterTypesForm.metadata))
 				constructor.metadata = parameterTypesForm.metadata;
-			constructor.parameterTypes = parseTypeVector(parameterTypesNode, constructorErrorMessage);
-			constructor.superParameterTypes = parseTypeVector(superParameterTypesNode, constructorErrorMessage);
 			constructors.push(constructor);
 		}
 		return constructors;
@@ -105,8 +105,8 @@ class GenClass {
 		return types;
 	}
 
-	public static function parseMethods(vectorNode:Node):Array<Dynamic> {
-		final methods:Array<Dynamic> = [];
+	public static function parseMethods(vectorNode:Node):Array<Method> {
+		final methods:Array<Method> = [];
 		for (node in directFormNodes(vectorNode)) {
 			final methodForm = splitMetadataForm(node);
 			final methodNode = methodForm.bodyNode;
@@ -127,12 +127,10 @@ class GenClass {
 			if (empty(returnType))
 				throw new haxe.Exception(":gen-class :methods return types must be symbols.");
 
-			final method:Dynamic = {};
+			final method = new Method(name, parseTypeVector(parameterTypesNode, ":gen-class :methods parameter types must be symbols inside a vector."),
+				returnType);
 			if (!empty(methodForm.metadata))
 				method.metadata = methodForm.metadata;
-			method.name = name;
-			method.parameterTypes = parseTypeVector(parameterTypesNode, ":gen-class :methods parameter types must be symbols inside a vector.");
-			method.returnType = returnType;
 			methods.push(method);
 		}
 		return methods;
@@ -145,9 +143,9 @@ class GenClass {
 		return [for (i in 0...Std.int(formNodes.length / 2)) [formNodes[i * 2], formNodes[i * 2 + 1]]];
 	}
 
-	public static function parseExposes(mapNode:Node):Array<Dynamic> {
+	public static function parseExposes(mapNode:Node):Array<Expose> {
 		final pairs = mapPairs(mapNode, ":gen-class :exposes must contain protected-field and accessor-map pairs.");
-		final exposes:Array<Dynamic> = [];
+		final exposes:Array<Expose> = [];
 		for (pair in pairs) {
 			final fieldName = symbolText(pair[0]);
 			final accessorsNode = pair[1];
@@ -157,7 +155,7 @@ class GenClass {
 				throw new haxe.Exception(":gen-class :exposes field values must be maps containing :get and/or :set.");
 
 			final accessorPairs = mapPairs(accessorsNode, ":gen-class :exposes accessor maps must contain keyword and method-name pairs.");
-			final expose:Dynamic = {fieldName: fieldName};
+			final expose = new Expose(fieldName);
 			final seenAccessors:Map<String, Bool> = [];
 			for (accessorPair in accessorPairs) {
 				final accessorKey = isToken(accessorPair[0]) ? accessorPair[0].text : null;
@@ -181,15 +179,15 @@ class GenClass {
 		return exposes;
 	}
 
-	public static function parseExposesMethods(mapNode:Node):Array<Dynamic> {
+	public static function parseExposesMethods(mapNode:Node):Array<ExposesMethod> {
 		final pairs = mapPairs(mapNode, ":gen-class :exposes-methods must contain superclass-method and exposed-name pairs.");
-		final exposesMethods:Array<Dynamic> = [];
+		final exposesMethods:Array<ExposesMethod> = [];
 		for (pair in pairs) {
 			final superMethodName = symbolText(pair[0]);
 			final exposedName = symbolText(pair[1]);
 			if (empty(superMethodName) || empty(exposedName))
 				throw new haxe.Exception(":gen-class :exposes-methods names must be symbols.");
-			exposesMethods.push({superMethodName: superMethodName, exposedName: exposedName});
+			exposesMethods.push(new ExposesMethod(superMethodName, exposedName));
 		}
 		return exposesMethods;
 	}

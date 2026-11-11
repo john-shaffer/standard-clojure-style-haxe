@@ -17,6 +17,10 @@ cli-smoke-test:
 cli-test:
     nix build path:.#cli-test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'
 
+# Fuzz the formatter with mutated test inputs, showing the log
+fuzz:
+    nix build path:.#fuzz-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'
+
 # Run the tests, showing the log
 test:
     nix build path:.#test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'

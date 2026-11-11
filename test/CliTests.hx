@@ -174,6 +174,14 @@ class CliTests {
 			eq(argv.logLevel, "quiet");
 		});
 
+		test("selectPatterns defaults to the current directory", () -> {
+			eq(CliUtil.selectPatterns(ArgParser.parse([])).include, ["."]);
+			final withConfig = ArgParser.parse([]);
+			CliUtil.mergeConfigIntoArgv(withConfig, {ignore: "vendor/"});
+			eq(CliUtil.selectPatterns(withConfig).include, ["."]);
+			eq(CliUtil.selectPatterns(ArgParser.parse(["src"])).include, []);
+		});
+
 		final noFiles = [];
 		test("buildCheckSummary all formatted", () -> {
 			final r = CliUtil.buildCheckSummary({filesThatDidNotRequireFormatting: ["a", "b", "c"], filesThatDidRequireFormatting: noFiles, filesWithErrors: noFiles});

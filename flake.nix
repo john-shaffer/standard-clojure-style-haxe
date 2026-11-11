@@ -51,6 +51,16 @@
             touch $out
           '';
 
+        fuzz =
+          let
+            run = self.packages.${pkgs.stdenv.hostPlatform.system}.fuzz-run;
+          in
+          pkgs.runCommand "fuzz" { } ''
+            cat ${run}/log
+            test "$(cat ${run}/status)" = 0
+            touch $out
+          '';
+
         # Reads the log and status written by test-run, so that a failure
         # is cached and its log is easy to reach.
         tests =
@@ -85,6 +95,19 @@
           export HOME=$TMPDIR
           set +e
           haxe cli-test.hxml > $out/log 2>&1
+          echo $? > $out/status
+        '';
+
+        # Runs the fuzz tests. Always succeeds; the log and exit status are
+        # written to the output and judged by checks.fuzz.
+        fuzz-run = pkgs.runCommand "fuzz-run" { nativeBuildInputs = [ pkgs.haxe ]; } ''
+          mkdir -p $out
+          cp -r ${src}/. work
+          chmod -R u+w work
+          cd work
+          export HOME=$TMPDIR
+          set +e
+          haxe test.hxml --run Fuzz tests/upstream tests/local > $out/log 2>&1
           echo $? > $out/status
         '';
 

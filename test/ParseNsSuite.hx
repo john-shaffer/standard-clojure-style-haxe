@@ -26,7 +26,7 @@ class ParseNsSuite {
 
 		final flatNodes = Parser.parse(c.input).flatten();
 		try {
-			final actual = NsParser.parse(flatNodes);
+			final actual = NsJson.toJson(NsParser.parse(flatNodes));
 			if (equal(actual, expected))
 				return null;
 			return 'expected:\n${c.expected}\nactual:\n${haxe.Json.stringify(actual, null, "  ")}';

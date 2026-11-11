@@ -45,3 +45,51 @@
    ^:no-doc
    [zzz.core :as z]))
 --Expected
+
+# require-macros :refer :all is printed
+
+--Input
+(ns foo
+  (:require-macros [a.macros :refer :all]))
+--Input
+
+--Expected
+(ns foo
+  (:require-macros
+   [a.macros :refer :all]))
+--Expected
+
+# comment after a form on the same line as the ns close stays with that form
+
+--Input
+(ns a (:require [b])) (def x) ;; c
+--Input
+
+--Expected
+(ns a
+  (:require
+   [b])) (def x) ;; c
+--Expected
+
+# trailing comments after multi-line prefix list entries and import package lists stay with them
+
+--Input
+(ns a
+  (:require [b
+             [c
+              :as d] ;; x
+             [e]])
+  (:import (f G
+              H) ;; y
+           (i J)))
+--Input
+
+--Expected
+(ns a
+  (:require
+   [b.c :as d] ;; x
+   [b.e])
+  (:import
+   (f G H) ;; y
+   (i J)))
+--Expected

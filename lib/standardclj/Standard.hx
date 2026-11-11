@@ -1,5 +1,7 @@
 package standardclj;
 
+import standardclj.NsData;
+
 enum FormatResult {
 	/** The formatted text; `ignored` is set when the file opted out with `#_:standard-clj/ignore-file`. **/
 	Success(out:String, ignored:Bool);
@@ -13,15 +15,16 @@ class Standard {
 	public static function format(text:String):FormatResult {
 		// replace any CRLF with LF before we do anything
 		final input = FormatUtil.crlfToLf(text);
-		final nodes = Parser.parse(input).flatten();
+		final root = Parser.parse(input);
+		final nodes = root.flatten();
 		if (NsParser.lookForIgnoreFile(nodes))
 			return Success(input, true);
-		final parsedNs:Dynamic = try {
+		final parsedNs:Ns = try {
 			NsParser.parse(nodes);
 		} catch (e:haxe.Exception) {
 			return Failure(e.message);
 		}
-		return NodesFormatter.format(nodes, parsedNs);
+		return NodesFormatter.format(root, parsedNs);
 	}
 
 	/** Parses Clojure source text into a syntax tree. Never fails. **/

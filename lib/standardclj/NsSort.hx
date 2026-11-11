@@ -1,5 +1,7 @@
 package standardclj;
 
+import standardclj.NsData;
+
 /** Comparators and a sort that matches JavaScript's Array.prototype.sort, for the ns data. **/
 class NsSort {
 	public static function cmpStr(a:String, b:String):Int {
@@ -7,7 +9,7 @@ class NsSort {
 	}
 
 	// NOTE: a missing platform compares equal to any platform, as upstream
-	public static function compareSymbolsThenPlatform(a:Dynamic, b:Dynamic):Int {
+	public static function compareSymbolsThenPlatform(a:{symbol:String, platform:Null<String>}, b:{symbol:String, platform:Null<String>}):Int {
 		final c = cmpStr(a.symbol, b.symbol);
 		if (c != 0)
 			return c;
@@ -16,12 +18,12 @@ class NsSort {
 		return cmpStr(a.platform, b.platform);
 	}
 
-	public static function compareFromSymbol(a:Dynamic, b:Dynamic):Int {
+	public static function compareFromSymbol(a:Rename, b:Rename):Int {
 		return cmpStr(a.fromSymbol, b.fromSymbol);
 	}
 
-	public static function compareImports(a:Dynamic, b:Dynamic):Int {
-		return cmpStr(Reflect.field(a, "package"), Reflect.field(b, "package"));
+	public static function compareImports(a:Import, b:Import):Int {
+		return cmpStr(a.packageName, b.packageName);
 	}
 
 	/**

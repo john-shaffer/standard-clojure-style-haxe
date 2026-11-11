@@ -1,0 +1,26 @@
+# a comment above the first libspec of a platform is printed above the opening bracket
+
+--Input
+(ns foo
+  (:require
+   #?@(:clj
+       [
+        ;; about bar
+        [bar :as b]
+        [bar2]]
+
+       :cljs
+       [[baz :as z]])))
+--Input
+
+--Expected
+(ns foo
+  (:require
+   #?@(:clj
+       ;; about bar
+       [[bar :as b]
+        [bar2]]
+
+       :cljs
+       [[baz :as z]])))
+--Expected

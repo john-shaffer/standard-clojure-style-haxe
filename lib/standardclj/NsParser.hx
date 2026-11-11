@@ -1,17 +1,20 @@
 package standardclj;
 
 import standardclj.NodeUtil.*;
+import standardclj.NsData;
 
 /** A form of a container, with the platform of the reader conditional it came from. **/
 private typedef Slot = {
 	final node:Node;
 	final platform:Null<String>;
+	/** The outermost reader conditional the form came from. **/
+	@:optional final origin:Node;
 };
 
 /** Where a comment at the end of a line goes: the item that ends on one of the lines `from` to `to`. **/
 private typedef Target = {
 	final from:Int;
-	final to:Int;
+	var to:Int;
 	final set:String->Void;
 };
 
@@ -23,14 +26,12 @@ private typedef PrefixList = {
 };
 
 private typedef RequireEntry = {
-	final data:Dynamic;
+	final data:Require;
 	final prefixList:Null<PrefixList>;
 };
 
 /**
-	Extracts the data of an ns form from the syntax tree. The result is a
-	Dynamic anonymous object shaped like upstream's `parseNs` result, where
-	absent fields are really absent.
+	Extracts the data of an ns form from the syntax tree.
 
 	The ns form is found in the tree and walked section by section. Reader
 	conditionals are expanded into their forms with the platform each one
@@ -73,7 +74,7 @@ class NsParser {
 		`Node.flatten`), the first of which is the root. Returns a data
 		structure of the ns form that can be used to "print from scratch".
 	**/
-	public static function parse(nodes:Array<Node>):Dynamic {
+	public static function parse(nodes:Array<Node>):Ns {
 		return new NsParser(nodes).run();
 	}
 
@@ -126,25 +127,13 @@ class NsParser {
 		return {pkg: s.substr(0, lastDotIdx), className: s.substr(lastDotIdx + 1)};
 	}
 
-	static inline function isArray(x:Dynamic):Bool {
-		return Std.isOfType(x, Array);
-	}
-
-	static inline function set(o:Dynamic, key:String, value:Dynamic):Void {
-		Reflect.setField(o, key, value);
-	}
-
-	/** The `Array` field of `o` named `key`, created when absent. **/
-	static function arrayField(o:Dynamic, key:String):Array<Dynamic> {
-		if (!isArray(Reflect.field(o, key)))
-			set(o, key, []);
-		return Reflect.field(o, key);
-	}
-
-	static function sortField(obj:Dynamic, field:String, cmp:Dynamic->Dynamic->Int):Void {
-		final arr:Dynamic = Reflect.field(obj, field);
-		if (isArray(arr))
-			NsSort.sortArray(cast(arr, Array<Dynamic>), cmp);
+	/** The array behind a nullable array field, created when absent. **/
+	static inline function lazy<T>(a:Null<Array<T>>, create:Array<T>->Void):Array<T> {
+		if (a != null)
+			return a;
+		final fresh:Array<T> = [];
+		create(fresh);
+		return fresh;
 	}
 
 	// -------------------------------------------------------------------------
@@ -155,10 +144,10 @@ class NsParser {
 	final lineOf:Map<Int, Int> = [];
 	// nodes that come directly after a newline
 	final startsLine:Map<Int, Bool> = [];
-	final result:Dynamic = {nsSymbol: null};
+	final result = new Ns();
 
 	final importKeys:Array<String> = [];
-	final importsByPackage:Map<String, Dynamic> = [];
+	final importsByPackage:Map<String, Import> = [];
 	final requires:Array<RequireEntry> = [];
 
 	// comments above the next item
@@ -174,7 +163,6 @@ class NsParser {
 	var lastCommentLine = -1;
 	var nsEndLine = -1;
 	var afterNsForm = false;
-	var insideRequire = false;
 
 	function new(nodes:Array<Node>) {
 		root = nodes.length > 0 ? nodes[0] : null;
@@ -221,6 +209,7 @@ class NsParser {
 
 	function expandReaderConditional(rc:Node, out:Array<Slot>):Void {
 		final splice = rc.children[0].text == "#?@(";
+		final first = out.length;
 		var platform:Null<String> = null;
 		for (c in bodyOf(rc)) {
 			if (isWhitespace(c) || c.name == "error")
@@ -232,6 +221,8 @@ class NsParser {
 			else
 				addSlot(c, platform, splice, out);
 		}
+		for (i in first...out.length)
+			out[i] = {node: out[i].node, platform: out[i].platform, origin: rc};
 	}
 
 	/** Records the trivia from `i` on and returns the index of the next form. **/
@@ -275,8 +266,8 @@ class NsParser {
 		}
 	}
 
-	/** Pairs up the tokens inside `form`, as in `{print core-print, get g}`. **/
-	function eachPair(form:Node, platform:Null<String>, f:Node->Node->Null<String>->Void):Void {
+	/** Pairs up the tokens inside `form`, as in `{print core-print, get g}`. Returns false if a token is left over. **/
+	function eachPair(form:Node, platform:Null<String>, f:Node->Node->Null<String>->Void):Bool {
 		var from:Null<Node> = null;
 		eachToken(form, platform, (n, p) -> {
 			if (from == null) {
@@ -286,6 +277,7 @@ class NsParser {
 				from = null;
 			}
 		});
+		return from == null;
 	}
 
 	// -------------------------------------------------------------------------
@@ -312,6 +304,12 @@ class NsParser {
 		target = {from: l, to: l, set: set};
 	}
 
+	// a comment after the closing bracket of a multi-line libspec or package list belongs to it
+	function extendTargetToEndOf(form:Node):Void {
+		if (target != null)
+			target.to = Std.int(Math.max(target.to, line(lastDescendant(form))));
+	}
+
 	function trivia(n:Node):Void {
 		final isDiscard = isReaderComment(n);
 		final text = isDiscard ? textOf(n) : n.text;
@@ -325,7 +323,7 @@ class NsParser {
 		}
 
 		// a comment after a discard that starts its line goes with the discard
-		if (!isDiscard && insideRequire && pendingDiscardLine == l && pending.length > 0) {
+		if (!isDiscard && pendingDiscardLine == l && pending.length > 0) {
 			pending[pending.length - 1] += " " + text;
 			pendingDiscardLine = -1;
 			return;
@@ -346,18 +344,23 @@ class NsParser {
 	// -------------------------------------------------------------------------
 	// The ns form
 
-	function run():Dynamic {
+	function run():Ns {
 		if (root == null || root.children == null)
 			return result;
 		for (i in 0...root.children.length) {
 			final form = root.children[i];
-			if (form.name == "parens" && form.children[0].text == "(" && headText(form) == "ns") {
+			if (isNsForm(form)) {
 				nsForm(form);
 				trailingComments(root.children, i + 1);
 				return finish();
 			}
 		}
 		return result;
+	}
+
+	/** Is this top-level node the `(ns ...)` form? **/
+	public static function isNsForm(form:Node):Bool {
+		return form.name == "parens" && form.children[0].text == "(" && headText(form) == "ns";
 	}
 
 	// the text of the first form, which a discard or a comment must not come before
@@ -445,7 +448,7 @@ class NsParser {
 	// ns metadata
 
 	function addNsMetadata(key:String, value:String):Void {
-		arrayField(result, "nsMetadata").push({key: key, value: value});
+		lazy(result.nsMetadata, a -> result.nsMetadata = a).push(new NsMetadata(key, value));
 	}
 
 	// ^:shorthand ^{:key value} ^Tag
@@ -495,32 +498,24 @@ class NsParser {
 			if (!isToken(key) || (key.text != ":exclude" && key.text != ":only" && key.text != ":rename"))
 				continue;
 			if (result.referClojure == null)
-				result.referClojure = {};
-			final field = key.text.substr(1);
-			final items = arrayField(result.referClojure, field);
+				result.referClojure = new ReferClojure();
+			final rc = result.referClojure;
+			// the array exists as soon as the key does, even if it ends up empty
+			final symbols = switch key.text {
+				case ":exclude": lazy(rc.exclude, a -> rc.exclude = a);
+				case ":only": lazy(rc.only, a -> rc.only = a);
+				default: null;
+			};
+			final renames = key.text == ":rename" ? lazy(rc.rename, a -> rc.rename = a) : null;
 			i = skipTrivia(ss, i);
 			if (i >= ss.length)
 				break;
 			final value = ss[i++];
-			if (field == "rename")
-				eachPair(value.node, value.platform, (from, to, p) -> items.push(renameItem(from, to, p)));
+			if (renames != null)
+				eachPair(value.node, value.platform, (from, to, p) -> renames.push(new Rename(from.text, to.text, p)));
 			else
-				eachToken(value.node, value.platform, (symbol, p) -> items.push(symbolItem(symbol.text, p)));
+				eachToken(value.node, value.platform, (symbol, p) -> symbols.push(new Symbol(symbol.text, p)));
 		}
-	}
-
-	static function symbolItem(symbol:String, platform:Null<String>):Dynamic {
-		final item:Dynamic = {symbol: symbol};
-		if (platform != null)
-			item.platform = platform;
-		return item;
-	}
-
-	static function renameItem(from:Node, to:Node, platform:Null<String>):Dynamic {
-		final item:Dynamic = {fromSymbol: from.text, toSymbol: to.text};
-		if (platform != null)
-			item.platform = platform;
-		return item;
 	}
 
 	// -------------------------------------------------------------------------
@@ -533,7 +528,6 @@ class NsParser {
 		if (above != null)
 			result.requireCommentsAbove = above;
 		targetLine(sec.head, c -> result.requireCommentAfter = c);
-		insideRequire = true;
 
 		var i = sec.next;
 		while ((i = skipTrivia(ss, i)) < ss.length) {
@@ -548,7 +542,6 @@ class NsParser {
 				libspec(form, s.platform);
 			}
 		}
-		insideRequire = false;
 	}
 
 	/** Collects the metadata of a `meta` node for the next libspec and returns the form it is on. **/
@@ -563,17 +556,11 @@ class NsParser {
 		return singleBody(n);
 	}
 
-	function newRequire(symbol:String, at:Node, platform:Null<String>):Dynamic {
-		final req:Dynamic = {};
-		final meta = takeMetadata();
-		if (meta != null)
-			req.metadata = meta;
-		req.symbol = symbol;
-		final above = takePending();
-		if (above != null)
-			req.commentsAbove = above;
-		if (platform != null)
-			req.platform = platform;
+	function newRequire(symbol:String, at:Node, platform:Null<String>):Require {
+		final req = new Require(symbol);
+		req.metadata = takeMetadata();
+		req.commentsAbove = takePending();
+		req.platform = platform;
 		requires.push({data: req, prefixList: null});
 		targetLine(at, c -> req.commentAfter = c);
 		return req;
@@ -591,11 +578,14 @@ class NsParser {
 			final req = newRequire('"' + stringText(symbol) + '"', symbol, first.platform);
 			req.symbolIsString = true;
 			requireOptions(ss, i, req);
+			extendTargetToEndOf(form);
 		} else if (isToken(symbol) && !isKeyword(symbol)) {
-			if (isPrefixList(ss, i))
+			if (isPrefixList(ss, i)) {
 				prefixList(symbol, ss, i);
-			else
+			} else {
 				requireOptions(ss, i, newRequire(symbol.text, symbol, first.platform));
+				extendTargetToEndOf(form);
+			}
 		}
 	}
 
@@ -614,12 +604,10 @@ class NsParser {
 		targetLine(prefix, c -> list.after = c);
 
 		// an entry on the line of the prefix leaves the comments there with the prefix list
-		function entry(symbol:Node):Dynamic {
-			final req:Dynamic = {};
-			final meta = takeMetadata();
-			if (meta != null)
-				req.metadata = meta;
-			req.symbol = prefix.text + "." + symbol.text;
+		function entry(symbol:Node, platform:Null<String>):Require {
+			final req = new Require(prefix.text + "." + symbol.text);
+			req.metadata = takeMetadata();
+			req.platform = platform;
 			requires.push({data: req, prefixList: list});
 			if (line(symbol) != prefixLine)
 				targetLine(symbol, c -> req.commentAfter = c);
@@ -627,62 +615,87 @@ class NsParser {
 		}
 
 		while ((i = skipTrivia(ss, i)) < ss.length) {
-			final form = unwrapMetadata(ss[i++].node);
+			final s = ss[i++];
+			final form = unwrapMetadata(s.node);
 			if (form == null)
 				continue;
 			if (isToken(form)) {
 				if (!isKeyword(form))
-					entry(form);
+					entry(form, s.platform);
 			} else if (form.name == "brackets" || form.name == "parens") {
-				final spec = slots(form, null);
+				final spec = slots(form, s.platform);
 				var j = skipTrivia(spec, 0);
-				if (j < spec.length && isToken(spec[j].node) && !isKeyword(spec[j].node))
-					requireOptions(spec, j + 1, entry(spec[j].node));
+				if (j < spec.length && isToken(spec[j].node) && !isKeyword(spec[j].node)) {
+					requireOptions(spec, j + 1, entry(spec[j].node, spec[j].platform));
+					extendTargetToEndOf(form);
+				}
 			}
 		}
 	}
 
+	static function symbolExpected(option:String):haxe.Exception {
+		return new haxe.Exception(':require $option must be followed by a symbol.');
+	}
+
 	// :as, :refer and so on, after the symbol of a libspec
-	function requireOptions(ss:Array<Slot>, i:Int, req:Dynamic):Void {
+	function requireOptions(ss:Array<Slot>, i:Int, req:Require):Void {
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
 			if (!isToken(key))
-				continue;
+				throw new haxe.Exception(":require options must be keywords.");
 			final option = key.text;
 			switch option {
 				case ":as" | ":as-alias" | ":default" | ":include-macros" | ":refer" | ":refer-macros" | ":rename" | ":exclude":
 				default:
-					continue;
+					throw new haxe.Exception(':require $option is not a supported option.');
 			}
 			i = skipTrivia(ss, i);
-			if (i >= ss.length)
+			final needsSymbol = option == ":as" || option == ":as-alias" || option == ":default";
+			if (i >= ss.length) {
+				if (needsSymbol)
+					throw symbolExpected(option);
 				return;
+			}
 			final value = ss[i++];
 			final v = value.node;
+			if (needsSymbol && (!isToken(v) || isKeyword(v)))
+				throw symbolExpected(option);
+			if (option == ":include-macros" && !isBoolean(v))
+				throw new haxe.Exception(":require :include-macros must be followed by true or false.");
+			if (option == ":refer" && !isCollection(v) && !(isToken(v) && v.text == ":all"))
+				throw new haxe.Exception(":require :refer must be followed by :all or a collection.");
+			if ((option == ":exclude" || option == ":refer-macros" || option == ":rename") && !isCollection(v))
+				throw new haxe.Exception(':require $option must be followed by a collection.');
 			switch option {
 				case ":as" if (isToken(v)):
-					req.as = v.text;
+					req.alias = v.text;
 				case ":as-alias" if (isToken(v)):
 					req.asAlias = v.text;
 				case ":default" if (isToken(v)):
-					set(req, "default", v.text);
+					req.defaultName = v.text;
 				case ":include-macros" if (isBoolean(v)):
 					req.includeMacros = v.text == "true";
 				case ":refer" if (isToken(v) && v.text == ":all"):
-					req.refer = "all";
+					req.referAll = true;
+					req.refer = null;
 				case ":refer":
-					eachToken(v, value.platform, (symbol, _) -> arrayField(req, "refer").push({symbol: symbol.text}));
+					eachToken(v, value.platform, (symbol, _) -> {
+						req.referAll = false;
+						lazy(req.refer, a -> req.refer = a).push(new Symbol(symbol.text, null));
+					});
 				case ":refer-macros":
 					for (s in slots(v, value.platform))
 						if (isTrivia(s.node))
 							trivia(s.node);
 						else if (isToken(s.node))
-							arrayField(req, "referMacros").push(s.node.text);
+							lazy(req.referMacros, a -> req.referMacros = a).push(s.node.text);
 				case ":rename":
-					eachPair(v, value.platform, (from, to, p) -> arrayField(req, "rename").push(renameItem(from, to, p)));
+					if (!eachPair(v, value.platform, (from, to, p) -> lazy(req.rename, a -> req.rename = a).push(new Rename(from.text, to.text, p))))
+						throw new haxe.Exception(":require :rename must be followed by pairs of symbols.");
 				case ":exclude":
-					set(req, "exclude", []);
-					eachToken(v, value.platform, (symbol, _) -> req.exclude.push({symbol: symbol.text}));
+					final exclude:Array<Symbol> = [];
+					req.exclude = exclude;
+					eachToken(v, value.platform, (symbol, _) -> exclude.push(new Symbol(symbol.text, null)));
 				default:
 			}
 		}
@@ -727,12 +740,13 @@ class NsParser {
 			if (isToken(c))
 				imported.classes.push(c.text);
 		}
+		extendTargetToEndOf(form);
 	}
 
-	function addImport(packageName:String, at:Node, platform:Null<String>):Dynamic {
+	function addImport(packageName:String, at:Node, platform:Null<String>):Import {
 		var imported = importsByPackage.get(packageName);
 		if (imported == null) {
-			imported = {classes: []};
+			imported = new Import(packageName, []);
 			importsByPackage.set(packageName, imported);
 			importKeys.push(packageName);
 		}
@@ -752,6 +766,10 @@ class NsParser {
 	function requireMacrosSection(n:Node, platform:Null<String>):Void {
 		final sec = openSection(n, platform);
 		final ss = sec.ss;
+		// comments inside the section, above the first libspec, belong to that libspec
+		final above = takePending();
+		if (above != null)
+			result.requireMacrosCommentsAbove = above;
 		targetLine(sec.head, c -> result.requireMacrosCommentAfter = c);
 
 		var i = sec.next;
@@ -769,23 +787,14 @@ class NsParser {
 		}
 	}
 
-	function newRequireMacros(symbol:String, at:Node, platform:Null<String>):Dynamic {
+	function newRequireMacros(symbol:String, at:Node, platform:Null<String>):Require {
 		if (result.requireMacros == null) {
 			result.requireMacros = [];
-			final above = takePending();
-			if (above != null)
-				result.requireMacrosCommentsAbove = above;
 		}
-		final req:Dynamic = {};
-		final meta = takeMetadata();
-		if (meta != null)
-			req.metadata = meta;
-		req.symbol = symbol;
-		final above = takePending();
-		if (above != null)
-			req.commentsAbove = above;
-		if (platform != null)
-			req.platform = platform;
+		final req = new Require(symbol);
+		req.metadata = takeMetadata();
+		req.commentsAbove = takePending();
+		req.platform = platform;
 		result.requireMacros.push(req);
 		targetLine(at, c -> req.commentAfter = c);
 		return req;
@@ -804,8 +813,10 @@ class NsParser {
 
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
-			if (!isToken(key) || (key.text != ":as" && key.text != ":refer" && key.text != ":rename"))
-				continue;
+			if (!isToken(key))
+				throw new haxe.Exception(":require-macros options must be keywords.");
+			if (key.text != ":as" && key.text != ":refer" && key.text != ":rename")
+				throw new haxe.Exception(':require-macros ${key.text} is not a supported option.');
 			i = skipTrivia(ss, i);
 			if (i >= ss.length)
 				return;
@@ -813,13 +824,20 @@ class NsParser {
 			final v = value.node;
 			switch key.text {
 				case ":as" if (isToken(v)):
-					req.as = v.text;
+					req.alias = v.text;
+				case ":refer" if (isToken(v) && v.text == ":all"):
+					req.referAll = true;
+					req.refer = null;
 				case ":refer" if (isToken(v)):
-					arrayField(req, "refer").push(symbolItem(v.text, value.platform));
+					req.referAll = false;
+					lazy(req.refer, a -> req.refer = a).push(new Symbol(v.text, value.platform));
 				case ":refer":
-					eachToken(v, value.platform, (symbol, p) -> arrayField(req, "refer").push(symbolItem(symbol.text, p)));
+					eachToken(v, value.platform, (symbol, p) -> {
+						req.referAll = false;
+						lazy(req.refer, a -> req.refer = a).push(new Symbol(symbol.text, p));
+					});
 				case ":rename":
-					eachPair(v, value.platform, (from, to, p) -> arrayField(req, "rename").push(renameItem(from, to, p)));
+					eachPair(v, value.platform, (from, to, p) -> lazy(req.rename, a -> req.rename = a).push(new Rename(from.text, to.text, p)));
 				default:
 			}
 		}
@@ -831,87 +849,211 @@ class NsParser {
 	function genClassSection(n:Node, platform:Null<String>):Void {
 		final sec = openSection(n, platform);
 		final ss = sec.ss;
-		final genClass:Dynamic = {isEmpty: true};
+		final genClass = new NsGenClass();
 		result.genClass = genClass;
-		if (platform != null)
-			genClass.platform = platform;
-		final above = takePending();
-		if (above != null)
-			genClass.commentsAbove = above;
+		genClass.platform = platform;
+		genClass.commentsAbove = takePending();
 		targetLine(sec.head, c -> genClass.commentAfter = c);
 
 		var i = sec.next;
 		while ((i = skipTrivia(ss, i)) < ss.length) {
 			final key = ss[i++].node;
-			if (!GenClass.isKeyword(key))
+			if (!GenClass.isKeyword(key)) {
+				i = genClassOther(genClass, key, ss, i);
 				continue;
+			}
 			genClass.isEmpty = false;
-			final name = key.text.substr(1);
-			final field:Dynamic = {};
-			set(genClass, name, field);
 			final above = takePending();
-			if (above != null)
-				field.commentsAbove = above;
 
 			i = skipTrivia(ss, i);
-			if (i >= ss.length)
+			final value = i < ss.length ? ss[i++] : null;
+			final entry = genClassKey(genClass, key.text.substr(1), above, value);
+			if (entry == null) {
+				// a kind of value this key does not take is kept as it is written
+				addOther(genClass, key, value.node, above);
+			} else if (value == null) {
 				return;
-			final value = ss[i++];
-			genClassValue(name, field, value);
-			// a comment after the value belongs to the key
-			if (Reflect.hasField(field, "value"))
-				target = {from: line(lastDescendant(value.node)), to: line(lastDescendant(value.node)), set: c -> field.commentAfter = c};
-		}
-	}
-
-	function genClassValue(name:String, field:Dynamic, value:Slot):Void {
-		final v = value.node;
-		if (name == "implements") {
-			if (isCollection(v))
-				genClassImplements(v, value.platform, field);
-		} else if (name == "prefix") {
-			if (isString(v))
-				field.value = GenClass.symbolText(v);
-		} else if (GenClass.isNameKey(name)) {
-			if (v.name == "meta") {
-				final form = GenClass.splitMetadataForm(v);
-				final symbol = GenClass.symbolText(form.bodyNode);
-				if (symbol == null || symbol == "")
-					throw new haxe.Exception(":gen-class :" + name + " must be a symbol or string.");
-				if (form.metadata != null && form.metadata != "")
-					field.metadata = form.metadata;
-				field.value = symbol;
-			} else if (isToken(v) || isString(v)) {
-				field.value = GenClass.symbolText(v);
+			} else if (entry.hasValue()) {
+				// a comment after the value belongs to the key
+				final end = line(lastDescendant(value.node));
+				target = {from: end, to: end, set: c -> entry.commentAfter = c};
 			}
-		} else if (name == "constructors") {
-			if (isMapLiteral(v))
-				field.value = GenClass.parseConstructors(v);
-		} else if (name == "methods") {
-			if (!isVectorLiteral(v))
-				throw new haxe.Exception(":gen-class :methods must be a vector of method vectors.");
-			field.value = GenClass.parseMethods(v);
-		} else if (name == "exposes") {
-			if (!isMapLiteral(v))
-				throw new haxe.Exception(":gen-class :exposes must be a map of protected-field names to accessor maps.");
-			field.value = GenClass.parseExposes(v);
-		} else if (name == "exposes-methods") {
-			if (!isMapLiteral(v))
-				throw new haxe.Exception(":gen-class :exposes-methods must be a map of superclass-method names to exposed names.");
-			field.value = GenClass.parseExposesMethods(v);
-		} else if (GenClass.isBooleanKey(name)) {
-			if (isBoolean(v))
-				field.value = v.text == "true";
 		}
 	}
 
-	function genClassImplements(collection:Node, platform:Null<String>, field:Dynamic):Void {
-		final symbols:Array<Dynamic> = [];
-		field.value = symbols;
-		collectImplements(collection, platform, symbols);
+	/**
+		Stores the key and its value in `genClass`. Returns the key, or null when
+		the value is not a kind that the key takes.
+	**/
+	function genClassKey(genClass:NsGenClass, name:String, above:Null<Array<String>>, value:Null<Slot>):Null<GenClassKeyBase> {
+		switch name {
+			case "constructors":
+				return keepEarlier(k -> genClass.constructors = k, keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null));
+			case "exposes":
+				return keepEarlier(k -> genClass.exposes = k, keyOf(above, value, (v, _) -> {
+					if (!isMapLiteral(v.node))
+						throw new haxe.Exception(":gen-class :exposes must be a map of protected-field names to accessor maps.");
+					return GenClass.parseExposes(v.node);
+				}));
+			case "exposes-methods":
+				return keepEarlier(k -> genClass.exposesMethods = k, keyOf(above, value, (v, _) -> {
+					if (!isMapLiteral(v.node))
+						throw new haxe.Exception(":gen-class :exposes-methods must be a map of superclass-method names to exposed names.");
+					return GenClass.parseExposesMethods(v.node);
+				}));
+			case "extends":
+				return keepEarlier(k -> genClass.extendsClass = k, keyOf(above, value, nameValue.bind(name)));
+			case "factory":
+				return keepEarlier(k -> genClass.factory = k, keyOf(above, value, nameValue.bind(name)));
+			case "impl-ns":
+				return keepEarlier(k -> genClass.implNs = k, keyOf(above, value, nameValue.bind(name)));
+			case "implements":
+				return keepEarlier(k -> genClass.implementsInterfaces = k, keyOf(above, value, (v, _) -> {
+					if (!isCollection(v.node))
+						return null;
+					final symbols:Array<Symbol> = [];
+					collectImplements(v.node, v.platform, symbols);
+					return symbols;
+				}));
+			case "init":
+				return keepEarlier(k -> genClass.init = k, keyOf(above, value, nameValue.bind(name)));
+			case "load-impl-ns":
+				return keepEarlier(k -> genClass.loadImplNs = k, keyOf(above, value, booleanValue));
+			case "main":
+				return keepEarlier(k -> genClass.main = k, keyOf(above, value, booleanValue));
+			case "methods":
+				return keepEarlier(k -> genClass.methods = k, keyOf(above, value, (v, _) -> {
+					if (!isVectorLiteral(v.node))
+						throw new haxe.Exception(":gen-class :methods must be a vector of method vectors.");
+					return GenClass.parseMethods(v.node);
+				}));
+			case "name":
+				return keepEarlier(k -> genClass.name = k, keyOf(above, value, nameValue.bind(name)));
+			case "post-init":
+				return keepEarlier(k -> genClass.postInit = k, keyOf(above, value, nameValue.bind(name)));
+			case "prefix":
+				return keepEarlier(k -> genClass.prefix = k, keyOf(above, value, (v, _) -> isString(v.node) ? GenClass.symbolText(v.node) : null));
+			case "state":
+				return keepEarlier(k -> genClass.state = k, keyOf(above, value, nameValue.bind(name)));
+			default:
+				return null;
+		}
 	}
 
-	function collectImplements(collection:Node, platform:Null<String>, symbols:Array<Dynamic>):Void {
+	/** Stores `key`, unless it is null because the value was the wrong kind: the earlier key then stays. **/
+	static function keepEarlier<T>(store:GenClassKey<T>->Void, key:Null<GenClassKey<T>>):Null<GenClassKey<T>> {
+		if (key != null)
+			store(key);
+		return key;
+	}
+
+	static function keyOf<T>(above:Null<Array<String>>, value:Null<Slot>, parse:(Slot, GenClassKey<T>) -> Null<T>):Null<GenClassKey<T>> {
+		final key = new GenClassKey<T>();
+		key.commentsAbove = above;
+		if (value != null) {
+			key.value = parse(value, key);
+			if (key.value == null)
+				return null;
+		}
+		return key;
+	}
+
+	static function booleanValue(v:Slot, _):Null<Bool> {
+		return isBoolean(v.node) ? v.node.text == "true" : null;
+	}
+
+	// a symbol or string, possibly with metadata
+	static function nameValue(name:String, v:Slot, key:GenClassKey<String>):Null<String> {
+		if (v.node.name == "meta") {
+			final form = GenClass.splitMetadataForm(v.node);
+			final symbol = GenClass.symbolText(form.bodyNode);
+			if (symbol == null || symbol == "")
+				throw new haxe.Exception(":gen-class :" + name + " must be a symbol or string.");
+			if (form.metadata != null && form.metadata != "")
+				key.metadata = form.metadata;
+			return symbol;
+		}
+		return isToken(v.node) || isString(v.node) ? GenClass.symbolText(v.node) : null;
+	}
+
+	// a key we do not know, or a form that is not a key: kept as it is written
+	function genClassOther(genClass:NsGenClass, first:Node, ss:Array<Slot>, i:Int):Int {
+		genClass.isEmpty = false;
+		final above = takePending();
+		var value:Null<Node> = null;
+		if (isToken(first) && isKeyword(first)) {
+			final next = skipTrivia(ss, i);
+			if (next < ss.length && !(isToken(ss[next].node) && isKeyword(ss[next].node))) {
+				final origin = ss[next].origin;
+				value = origin ?? ss[next].node;
+				i = next + 1;
+				// a reader conditional value is kept whole, not as a form per platform
+				while (origin != null && i < ss.length && ss[i].origin == origin)
+					i++;
+			}
+		}
+		addOther(genClass, first, value, above);
+		return i;
+	}
+
+	function addOther(genClass:NsGenClass, key:Node, value:Null<Node>, above:Null<Array<String>>):Void {
+		final item = new GenClassOther(shape(key, 0) + (value == null ? "" : " " + shape(value, textOf(key).length + 1)));
+		item.commentsAbove = above;
+		lazy(genClass.other, a -> genClass.other = a).push(item);
+		final end = line(lastDescendant(value == null ? key : value));
+		target = {from: end, to: end, set: c -> item.commentAfter = c};
+	}
+
+	/**
+		A form with its elements separated by spaces. Commas and comments inside it
+		are kept, and a comment is followed by a line break. Lines after the first
+		are indented from column 0, where `col` is the column of the form's first line.
+	**/
+	static function shape(n:Node, col:Int):String {
+		if (isReaderComment(n)) {
+			final body = singleBody(n);
+			return "#_" + (body == null ? "" : shape(body, col + 2));
+		}
+		if (!isCollection(n))
+			return textOf(n);
+		final open = n.children[0].text;
+		final last = n.children[n.children.length - 1];
+		final close = last.name == ".close" ? last.text : "";
+		final indent = "\n" + [for (_ in 0...col + open.length) " "].join("");
+		var out = open;
+		var hasElement = false;
+		var breakBefore = false;
+		var comma = false;
+		for (c in bodyOf(n)) {
+			if (isWhitespace(c)) {
+				if (isComma(c) && !comma && hasElement) {
+					comma = true;
+					out += ",";
+				}
+				continue;
+			}
+			if (c.name == "error")
+				continue;
+			comma = false;
+			if (isComment(c)) {
+				out += (hasElement ? " " : "") + c.text;
+				breakBefore = true;
+				hasElement = true;
+				continue;
+			}
+			if (hasElement)
+				out += breakBefore ? indent : " ";
+			final lineStart = out.lastIndexOf("\n");
+			final c2 = lineStart < 0 ? col + out.length : out.length - lineStart - 1;
+			out += shape(c, c2);
+			hasElement = true;
+			breakBefore = false;
+		}
+		// a closing paren after a comment would be commented out
+		return out + (breakBefore ? indent : "") + close;
+	}
+
+	function collectImplements(collection:Node, platform:Null<String>, symbols:Array<Symbol>):Void {
 		for (s in slots(collection, platform)) {
 			final n = s.node;
 			if (isTrivia(n)) {
@@ -922,7 +1064,7 @@ class NsParser {
 				final symbol = GenClass.symbolText(n);
 				if (symbol == null || symbol == "")
 					throw new haxe.Exception(":gen-class :implements values must be symbols or strings.");
-				symbols.push(symbolItem(symbol, s.platform));
+				symbols.push(new Symbol(symbol, s.platform));
 			}
 		}
 	}
@@ -930,32 +1072,39 @@ class NsParser {
 	// -------------------------------------------------------------------------
 	// Finishing
 
-	function finish():Dynamic {
-		final referClojure:Dynamic = result.referClojure;
+	function finish():Ns {
+		final referClojure = result.referClojure;
 		if (referClojure != null) {
-			sortField(referClojure, "exclude", NsSort.compareSymbolsThenPlatform);
-			sortField(referClojure, "only", NsSort.compareSymbolsThenPlatform);
-			sortField(referClojure, "rename", NsSort.compareFromSymbol);
+			sortSymbols(referClojure.exclude);
+			sortSymbols(referClojure.only);
+			sortRenames(referClojure.rename);
 		}
 
-		final genClass:Dynamic = result.genClass;
-		if (genClass != null) {
-			final implementsKey:Dynamic = Reflect.field(genClass, "implements");
-			if (implementsKey != null)
-				sortField(implementsKey, "value", NsSort.compareSymbolsThenPlatform);
-		}
+		final implementsInterfaces = result.genClass == null ? null : result.genClass.implementsInterfaces;
+		if (implementsInterfaces != null)
+			sortSymbols(implementsInterfaces.value);
 
-		if (isArray(result.requireMacros)) {
-			final requireMacros:Array<Dynamic> = result.requireMacros;
+		final requireMacros = result.requireMacros;
+		if (requireMacros != null) {
 			NsSort.sortArray(requireMacros, NsSort.compareSymbolsThenPlatform);
 			for (rm in requireMacros)
-				sortField(rm, "refer", NsSort.compareSymbolsThenPlatform);
+				sortSymbols(rm.refer);
 		}
 
 		finishRequires();
 		finishImports();
 		finishNsMetadata();
 		return result;
+	}
+
+	static function sortSymbols(symbols:Null<Array<Symbol>>):Void {
+		if (symbols != null)
+			NsSort.sortArray(symbols, NsSort.compareSymbolsThenPlatform);
+	}
+
+	static function sortRenames(renames:Null<Array<Rename>>):Void {
+		if (renames != null)
+			NsSort.sortArray(renames, NsSort.compareFromSymbol);
 	}
 
 	function finishRequires():Void {
@@ -973,9 +1122,9 @@ class NsParser {
 				if (list.after != null)
 					req.commentAfter = list.after;
 			}
-			sortField(req, "refer", NsSort.compareSymbolsThenPlatform);
-			sortField(req, "exclude", NsSort.compareSymbolsThenPlatform);
-			sortField(req, "rename", NsSort.compareFromSymbol);
+			sortSymbols(req.refer);
+			sortSymbols(req.exclude);
+			sortRenames(req.rename);
 		}
 		result.requires = [for (entry in requires) entry.data];
 	}
@@ -983,12 +1132,12 @@ class NsParser {
 	function finishImports():Void {
 		if (importKeys.length == 0)
 			return;
-		final imports:Array<Dynamic> = [];
+		final imports:Array<Import> = [];
 		result.imports = imports;
 
 		for (packageName in importKeys) {
-			final obj:Dynamic = importsByPackage.get(packageName);
-			final sortedClasses:Array<String> = obj.classes;
+			final obj = importsByPackage.get(packageName);
+			final sortedClasses = obj.classes;
 			NsSort.sortArray(sortedClasses, NsSort.cmpStr);
 
 			// classes in the default package are printed as bare symbols,
@@ -996,28 +1145,16 @@ class NsParser {
 			if (packageName == "") {
 				final numClasses = sortedClasses.length;
 				for (classIdx in 0...numClasses) {
-					final importObj:Dynamic = {};
-					set(importObj, "package", "");
-					importObj.classes = [sortedClasses[classIdx]];
-					if (obj.commentsAbove != null && classIdx == 0)
-						importObj.commentsAbove = obj.commentsAbove;
-					if (obj.commentAfter != null && classIdx == numClasses - 1)
-						importObj.commentAfter = obj.commentAfter;
-					if (obj.platform != null)
-						importObj.platform = obj.platform;
-					imports.push(importObj);
+					final imported = new Import("", [sortedClasses[classIdx]]);
+					if (classIdx == 0)
+						imported.commentsAbove = obj.commentsAbove;
+					if (classIdx == numClasses - 1)
+						imported.commentAfter = obj.commentAfter;
+					imported.platform = obj.platform;
+					imports.push(imported);
 				}
 			} else {
-				final importObj:Dynamic = {};
-				set(importObj, "package", packageName);
-				importObj.classes = sortedClasses;
-				if (obj.commentsAbove != null)
-					importObj.commentsAbove = obj.commentsAbove;
-				if (obj.commentAfter != null)
-					importObj.commentAfter = obj.commentAfter;
-				if (obj.platform != null)
-					importObj.platform = obj.platform;
-				imports.push(importObj);
+				imports.push(obj);
 			}
 		}
 
@@ -1026,22 +1163,20 @@ class NsParser {
 
 	// merges the keys of the ns metadata: the last value of a key wins, at its own position
 	function finishNsMetadata():Void {
-		if (!isArray(result.nsMetadata))
-			return;
-		final nsMetadata:Array<Dynamic> = result.nsMetadata;
-		if (nsMetadata.length < 2)
+		final nsMetadata = result.nsMetadata;
+		if (nsMetadata == null || nsMetadata.length < 2)
 			return;
 		final lastValues:Map<String, String> = [];
 		for (item in nsMetadata)
 			lastValues[item.key] = item.value;
-		final merged:Array<Dynamic> = [];
+		final merged:Array<NsMetadata> = [];
 		var i = nsMetadata.length - 1;
 		while (i >= 0) {
 			final key = nsMetadata[i].key;
 			final value = lastValues[key];
 			if (value != null && value != "") {
 				lastValues.remove(key);
-				merged.push({key: key, value: value});
+				merged.push(new NsMetadata(key, value));
 			}
 			i--;
 		}

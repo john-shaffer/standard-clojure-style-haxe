@@ -1,0 +1,57 @@
+# gen-class unknown keys and unsupported values are kept by shape
+
+--Input
+(ns foo
+  (:gen-class
+   :foo [x
+         y]
+   :name foo.Bar
+   :main [a]
+   :bar baz
+   :baz {a b}
+   :qux
+   :quux))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "name": {"value": "foo.Bar"},
+    "other": [
+      {"text": ":foo [x y]"},
+      {"text": ":main [a]"},
+      {"text": ":bar baz"},
+      {"text": ":baz {a b}"},
+      {"text": ":qux"},
+      {"text": ":quux"}
+    ]
+  }
+}
+--Expected
+
+# gen-class unknown keys keep their comments
+
+--Input
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   ;; about foo
+   :foo (a b) ;; after foo
+   :bar 1))
+--Input
+
+--Expected
+{
+  "nsSymbol": "foo",
+  "genClass": {
+    "isEmpty": false,
+    "name": {"value": "foo.Bar"},
+    "other": [
+      {"text": ":foo (a b)", "commentsAbove": [";; about foo"], "commentAfter": ";; after foo"},
+      {"text": ":bar 1"}
+    ]
+  }
+}
+--Expected
