@@ -87,11 +87,12 @@ class NsFormatter {
 		return out;
 	}
 
-	static function formatRequireLine(req:Require, initialIndentation:String, metadataInline:Bool):String {
+	static function formatRequireLine(req:Require, initialIndentation:String, metadataInline:Bool, commentsPrinted = false):String {
 		var out = "";
 		var requireIndentation = initialIndentation;
 
-		out = printCommentsAbove(out, req.commentsAbove, initialIndentation);
+		if (!commentsPrinted)
+			out = printCommentsAbove(out, req.commentsAbove, initialIndentation);
 
 		final metadata = req.metadata;
 		if (size(metadata) > 0) {
@@ -649,15 +650,18 @@ class NsFormatter {
 					final platform = reqPlatforms[platformIdx];
 					final isLastPlatform = platformIdx + 1 == numPlatforms;
 
-					if (platformIdx == 0) {
-						out = StringTools.trim(out);
-						out += "\n   #?@(" + platform + "\n       [";
-					} else {
-						out += "\n\n       " + platform + "\n       [";
-					}
-
 					// only look at requires for this platform
 					final platformRequires = filterOnPlatform(requires, platform);
+
+					if (platformIdx == 0) {
+						out = StringTools.trim(out);
+						out += "\n   #?@(" + platform + "\n";
+					} else {
+						out += "\n\n       " + platform + "\n";
+					}
+					// comments above the first libspec of this platform are printed above the opening bracket
+					out = printCommentsAbove(out, platformRequires[0].commentsAbove, "       ");
+					out += "       [";
 					final numFilteredReqs = platformRequires.length;
 					var printedFirstReqLine = false;
 					var printPlatformClosingBracket = true;
@@ -671,7 +675,7 @@ class NsFormatter {
 							out += formatRequireLine(req, "        ", false);
 						} else {
 							printedFirstReqLine = true;
-							out += formatRequireLine(req, "", false);
+							out += formatRequireLine(req, "", false, true);
 						}
 
 						if (hasComment && !isLastForPlatform) {
