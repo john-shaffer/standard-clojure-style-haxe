@@ -888,56 +888,63 @@ class NsParser {
 	function genClassKey(genClass:NsGenClass, name:String, above:Null<Array<String>>, value:Null<Slot>):Null<GenClassKeyBase> {
 		switch name {
 			case "constructors":
-				return genClass.constructors = keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null);
+				return keepEarlier(k -> genClass.constructors = k, keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null));
 			case "exposes":
-				return genClass.exposes = keyOf(above, value, (v, _) -> {
+				return keepEarlier(k -> genClass.exposes = k, keyOf(above, value, (v, _) -> {
 					if (!isMapLiteral(v.node))
 						throw new haxe.Exception(":gen-class :exposes must be a map of protected-field names to accessor maps.");
 					return GenClass.parseExposes(v.node);
-				});
+				}));
 			case "exposes-methods":
-				return genClass.exposesMethods = keyOf(above, value, (v, _) -> {
+				return keepEarlier(k -> genClass.exposesMethods = k, keyOf(above, value, (v, _) -> {
 					if (!isMapLiteral(v.node))
 						throw new haxe.Exception(":gen-class :exposes-methods must be a map of superclass-method names to exposed names.");
 					return GenClass.parseExposesMethods(v.node);
-				});
+				}));
 			case "extends":
-				return genClass.extendsClass = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.extendsClass = k, keyOf(above, value, nameValue.bind(name)));
 			case "factory":
-				return genClass.factory = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.factory = k, keyOf(above, value, nameValue.bind(name)));
 			case "impl-ns":
-				return genClass.implNs = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.implNs = k, keyOf(above, value, nameValue.bind(name)));
 			case "implements":
-				return genClass.implementsInterfaces = keyOf(above, value, (v, _) -> {
+				return keepEarlier(k -> genClass.implementsInterfaces = k, keyOf(above, value, (v, _) -> {
 					if (!isCollection(v.node))
 						return null;
 					final symbols:Array<Symbol> = [];
 					collectImplements(v.node, v.platform, symbols);
 					return symbols;
-				});
+				}));
 			case "init":
-				return genClass.init = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.init = k, keyOf(above, value, nameValue.bind(name)));
 			case "load-impl-ns":
-				return genClass.loadImplNs = keyOf(above, value, booleanValue);
+				return keepEarlier(k -> genClass.loadImplNs = k, keyOf(above, value, booleanValue));
 			case "main":
-				return genClass.main = keyOf(above, value, booleanValue);
+				return keepEarlier(k -> genClass.main = k, keyOf(above, value, booleanValue));
 			case "methods":
-				return genClass.methods = keyOf(above, value, (v, _) -> {
+				return keepEarlier(k -> genClass.methods = k, keyOf(above, value, (v, _) -> {
 					if (!isVectorLiteral(v.node))
 						throw new haxe.Exception(":gen-class :methods must be a vector of method vectors.");
 					return GenClass.parseMethods(v.node);
-				});
+				}));
 			case "name":
-				return genClass.name = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.name = k, keyOf(above, value, nameValue.bind(name)));
 			case "post-init":
-				return genClass.postInit = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.postInit = k, keyOf(above, value, nameValue.bind(name)));
 			case "prefix":
-				return genClass.prefix = keyOf(above, value, (v, _) -> isString(v.node) ? GenClass.symbolText(v.node) : null);
+				return keepEarlier(k -> genClass.prefix = k, keyOf(above, value, (v, _) -> isString(v.node) ? GenClass.symbolText(v.node) : null));
 			case "state":
-				return genClass.state = keyOf(above, value, nameValue.bind(name));
+				return keepEarlier(k -> genClass.state = k, keyOf(above, value, nameValue.bind(name)));
 			default:
 				return null;
 		}
+	}
+
+	/** Stores `key`, unless it is null because the value was the wrong kind: the earlier key then stays. **/
+	static function keepEarlier<T>(store:GenClassKey<T>->Void, key:Null<GenClassKey<T>>):Null<GenClassKey<T>> {
+		if (key != null)
+			store(key);
+		return key;
 	}
 
 	static function keyOf<T>(above:Null<Array<String>>, value:Null<Slot>, parse:(Slot, GenClassKey<T>) -> Null<T>):Null<GenClassKey<T>> {

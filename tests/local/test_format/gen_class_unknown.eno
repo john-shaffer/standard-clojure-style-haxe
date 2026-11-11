@@ -97,3 +97,17 @@
    :foo [x ;; the x
          ]))
 --Expected
+
+# a repeated known key with a value of the wrong kind keeps the earlier valid value
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar :name [a b]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :name [a b]))
+--Expected
