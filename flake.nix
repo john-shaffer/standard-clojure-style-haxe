@@ -1,11 +1,18 @@
 {
   description = "standard-clj: Standard Clojure Style formatter, implemented in Haxe";
 
-  # Latest stable nixpkgs
-  inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
+  inputs = {
+    # Latest stable nixpkgs
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
+
+        sand = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:john-shaffer/sand";
+    };
+  };
 
   outputs =
-    { nixpkgs, self }:
+    { nixpkgs, self, ... }@inputs:
     let
       systems = [
         "aarch64-darwin"
@@ -156,6 +163,7 @@
             pkgs.haxe
             pkgs.just
             pkgs.neko
+            inputs.sand.packages.${pkgs.stdenv.hostPlatform.system}.default
           ];
         };
       });

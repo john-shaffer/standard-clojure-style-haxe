@@ -1,4 +1,5 @@
 alias b := build
+alias fmt := format
 alias t := test
 
 default:
@@ -19,6 +20,9 @@ cli-smoke-test:
 # Run the CLI unit tests, showing the log
 cli-test:
     nix build path:.#cli-test-run --no-link --print-out-paths | xargs -I{} sh -c 'cat {}/log; exit "$(cat {}/status)"'
+
+format:
+    nix develop -c sand format
 
 # Fuzz the formatter with mutated test inputs, showing the log
 fuzz:
