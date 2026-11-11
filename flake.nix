@@ -1,6 +1,7 @@
 {
   description = "standard-clj: Standard Clojure Style formatter, implemented in Haxe";
 
+  # Latest stable nixpkgs
   inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
 
   outputs =
