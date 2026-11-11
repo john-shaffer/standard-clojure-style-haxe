@@ -1,3 +1,6 @@
+alias b := build
+alias t := test
+
 default:
     @just --list
 
