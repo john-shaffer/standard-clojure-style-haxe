@@ -1041,7 +1041,7 @@ class NsFormatter {
 				}
 				out += "\n";
 				out = printCommentsAbove(out, other.commentsAbove, valueIndentation);
-				out += valueIndentation + other.text;
+				out += valueIndentation + other.text.split("\n").join("\n" + valueIndentation);
 				if (has(other.commentAfter))
 					commentAfterGenClass = other.commentAfter;
 			}

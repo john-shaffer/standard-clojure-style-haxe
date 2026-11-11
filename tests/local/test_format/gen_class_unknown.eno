@@ -35,3 +35,65 @@
    :foo [x y] ;; after foo
    :bar baz))
 --Expected
+
+# gen-class unknown values keep reader conditionals
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar :foo #?(:clj [x y] :cljs [z]) :bar #?@(:clj [a b])))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :foo #?(:clj [x y] :cljs [z])
+   :bar #?@(:clj [a b])))
+--Expected
+
+# gen-class unknown values keep commas
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar :foo {a b, c d} :bar [x, y]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :foo {a b, c d}
+   :bar [x, y]))
+--Expected
+
+# gen-class unknown values keep comments inside them
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar :foo [x ;; the x
+                                  y]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :foo [x ;; the x
+         y]))
+--Expected
+
+# gen-class unknown values do not comment out their closing bracket
+
+--Input
+(ns foo
+  (:gen-class :name foo.Bar :foo [x ;; the x
+                                  ]))
+--Input
+
+--Expected
+(ns foo
+  (:gen-class
+   :name foo.Bar
+   :foo [x ;; the x
+         ]))
+--Expected

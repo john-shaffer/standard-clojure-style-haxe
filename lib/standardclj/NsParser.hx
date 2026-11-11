@@ -7,6 +7,8 @@ import standardclj.NsData;
 private typedef Slot = {
 	final node:Node;
 	final platform:Null<String>;
+	/** The outermost reader conditional the form came from. **/
+	@:optional final origin:Node;
 };
 
 /** Where a comment at the end of a line goes: the item that ends on one of the lines `from` to `to`. **/
@@ -207,6 +209,7 @@ class NsParser {
 
 	function expandReaderConditional(rc:Node, out:Array<Slot>):Void {
 		final splice = rc.children[0].text == "#?@(";
+		final first = out.length;
 		var platform:Null<String> = null;
 		for (c in bodyOf(rc)) {
 			if (isWhitespace(c) || c.name == "error")
@@ -218,6 +221,8 @@ class NsParser {
 			else
 				addSlot(c, platform, splice, out);
 		}
+		for (i in first...out.length)
+			out[i] = {node: out[i].node, platform: out[i].platform, origin: rc};
 	}
 
 	/** Records the trivia from `i` on and returns the index of the next form. **/
@@ -971,8 +976,12 @@ class NsParser {
 		if (isToken(first) && isKeyword(first)) {
 			final next = skipTrivia(ss, i);
 			if (next < ss.length && !(isToken(ss[next].node) && isKeyword(ss[next].node))) {
-				value = ss[next].node;
+				final origin = ss[next].origin;
+				value = origin ?? ss[next].node;
 				i = next + 1;
+				// a reader conditional value is kept whole, not as a form per platform
+				while (origin != null && i < ss.length && ss[i].origin == origin)
+					i++;
 			}
 		}
 		addOther(genClass, first, value, above);
@@ -980,20 +989,60 @@ class NsParser {
 	}
 
 	function addOther(genClass:NsGenClass, key:Node, value:Null<Node>, above:Null<Array<String>>):Void {
-		final item = new GenClassOther(shape(key) + (value == null ? "" : " " + shape(value)));
+		final item = new GenClassOther(shape(key, 0) + (value == null ? "" : " " + shape(value, textOf(key).length + 1)));
 		item.commentsAbove = above;
 		lazy(genClass.other, a -> genClass.other = a).push(item);
 		final end = line(lastDescendant(value == null ? key : value));
 		target = {from: end, to: end, set: c -> item.commentAfter = c};
 	}
 
-	/** A form on a single line, with its elements separated by spaces. **/
-	static function shape(n:Node):String {
+	/**
+		A form with its elements separated by spaces. Commas and comments inside it
+		are kept, and a comment is followed by a line break. Lines after the first
+		are indented from column 0, where `col` is the column of the form's first line.
+	**/
+	static function shape(n:Node, col:Int):String {
+		if (isReaderComment(n)) {
+			final body = singleBody(n);
+			return "#_" + (body == null ? "" : shape(body, col + 2));
+		}
 		if (!isCollection(n))
 			return textOf(n);
+		final open = n.children[0].text;
 		final last = n.children[n.children.length - 1];
 		final close = last.name == ".close" ? last.text : "";
-		return n.children[0].text + bodyOf(n).filter(c -> !isGap(c)).map(shape).join(" ") + close;
+		final indent = "\n" + [for (_ in 0...col + open.length) " "].join("");
+		var out = open;
+		var hasElement = false;
+		var breakBefore = false;
+		var comma = false;
+		for (c in bodyOf(n)) {
+			if (isWhitespace(c)) {
+				if (isComma(c) && !comma && hasElement) {
+					comma = true;
+					out += ",";
+				}
+				continue;
+			}
+			if (c.name == "error")
+				continue;
+			comma = false;
+			if (isComment(c)) {
+				out += (hasElement ? " " : "") + c.text;
+				breakBefore = true;
+				hasElement = true;
+				continue;
+			}
+			if (hasElement)
+				out += breakBefore ? indent : " ";
+			final lineStart = out.lastIndexOf("\n");
+			final c2 = lineStart < 0 ? col + out.length : out.length - lineStart - 1;
+			out += shape(c, c2);
+			hasElement = true;
+			breakBefore = false;
+		}
+		// a closing paren after a comment would be commented out
+		return out + (breakBefore ? indent : "") + close;
 	}
 
 	function collectImplements(collection:Node, platform:Null<String>, symbols:Array<Symbol>):Void {
