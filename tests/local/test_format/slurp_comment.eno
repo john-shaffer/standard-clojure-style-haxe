@@ -1,0 +1,17 @@
+# a comment left behind by slurped closers is indented like any comment line
+
+--Input
+(foo (bar biz
+          (fn []
+            (ccc))
+          ) ;; after
+      zzz)
+--Input
+
+--Expected
+(foo (bar biz
+          (fn []
+            (ccc)))
+  ;; after
+  zzz)
+--Expected

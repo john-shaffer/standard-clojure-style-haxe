@@ -630,6 +630,11 @@ class NodesFormatter {
 			if (currentNodeIsWhitespace && (isLastNode || !outputTxtContainsChars))
 				skipPrintingThisNode = true;
 
+			// whitespace that remains on a line after its closers were slurped up to the line above
+			// would be added to the indentation
+			if (currentNodeIsWhitespace && nodesWeHavePrintedOnThisLine.length == 0 && !hasNonWhitespaceChars(lineTxt))
+				skipPrintingThisNode = true;
+
 			// add the text of this node to the current line
 			if (!skipPrintingThisNode) {
 				final lineLengthBeforePrintingNode = lineTxt.length;
