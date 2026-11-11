@@ -766,6 +766,10 @@ class NsParser {
 	function requireMacrosSection(n:Node, platform:Null<String>):Void {
 		final sec = openSection(n, platform);
 		final ss = sec.ss;
+		// comments inside the section, above the first libspec, belong to that libspec
+		final above = takePending();
+		if (above != null)
+			result.requireMacrosCommentsAbove = above;
 		targetLine(sec.head, c -> result.requireMacrosCommentAfter = c);
 
 		var i = sec.next;
@@ -786,9 +790,6 @@ class NsParser {
 	function newRequireMacros(symbol:String, at:Node, platform:Null<String>):Require {
 		if (result.requireMacros == null) {
 			result.requireMacros = [];
-			final above = takePending();
-			if (above != null)
-				result.requireMacrosCommentsAbove = above;
 		}
 		final req = new Require(symbol);
 		req.metadata = takeMetadata();
