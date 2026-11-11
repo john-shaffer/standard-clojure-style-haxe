@@ -6,8 +6,21 @@ import standardclj.NsData;
 /** Parsing of the values of `:gen-class` keys in an ns form. **/
 class GenClass {
 	static final keywords = [
-		":constructors", ":exposes", ":exposes-methods", ":extends", ":factory", ":impl-ns", ":implements", ":init",
-		":load-impl-ns", ":main", ":methods", ":name", ":post-init", ":prefix", ":state",
+		":constructors",
+		":exposes",
+		":exposes-methods",
+		":extends",
+		":factory",
+		":impl-ns",
+		":implements",
+		":init",
+		":load-impl-ns",
+		":main",
+		":methods",
+		":name",
+		":post-init",
+		":prefix",
+		":state",
 	];
 
 	public static function isKeyword(node:Null<Node>):Bool {
@@ -140,7 +153,9 @@ class GenClass {
 		final formNodes = directFormNodes(mapNode);
 		if (formNodes.length % 2 != 0)
 			throw new haxe.Exception(errorMessage);
-		return [for (i in 0...Std.int(formNodes.length / 2)) [formNodes[i * 2], formNodes[i * 2 + 1]]];
+		return [
+			for (i in 0...Std.int(formNodes.length / 2)) [formNodes[i * 2], formNodes[i * 2 + 1]]
+		];
 	}
 
 	public static function parseExposes(mapNode:Node):Array<Expose> {

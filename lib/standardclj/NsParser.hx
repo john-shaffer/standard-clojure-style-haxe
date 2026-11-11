@@ -7,6 +7,7 @@ import standardclj.NsData;
 private typedef Slot = {
 	final node:Node;
 	final platform:Null<String>;
+
 	/** The outermost reader conditional the form came from. **/
 	@:optional final origin:Node;
 };
@@ -138,7 +139,6 @@ class NsParser {
 
 	// -------------------------------------------------------------------------
 	// State
-
 	final root:Null<Node>;
 	// the line of each node, counting the newline nodes before it
 	final lineOf:Map<Int, Int> = [];
@@ -888,7 +888,8 @@ class NsParser {
 	function genClassKey(genClass:NsGenClass, name:String, above:Null<Array<String>>, value:Null<Slot>):Null<GenClassKeyBase> {
 		switch name {
 			case "constructors":
-				return keepEarlier(k -> genClass.constructors = k, keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null));
+				return keepEarlier(k -> genClass.constructors = k,
+					keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null));
 			case "exposes":
 				return keepEarlier(k -> genClass.exposes = k, keyOf(above, value, (v, _) -> {
 					if (!isMapLiteral(v.node))

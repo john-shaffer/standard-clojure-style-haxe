@@ -5,6 +5,7 @@ import standardclj.NsData;
 enum FormatResult {
 	/** The formatted text; `ignored` is set when the file opted out with `#_:standard-clj/ignore-file`. **/
 	Success(out:String, ignored:Bool);
+
 	/** The input could not be formatted, e.g. a malformed `ns` form. **/
 	Failure(reason:String);
 }

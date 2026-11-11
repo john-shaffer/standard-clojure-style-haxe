@@ -42,22 +42,30 @@ class NsMetadata {
 class Require {
 	public var symbol:String;
 	public var platform:Null<String>;
+
 	/** The `:as` symbol. **/
 	public var alias:Null<String>;
+
 	public var asAlias:Null<String>;
 	public var commentAfter:Null<String>;
 	public var commentsAbove:Null<Array<String>>;
+
 	/** The `:default` symbol. **/
 	public var defaultName:Null<String>;
+
 	public var exclude:Null<Array<Symbol>>;
 	public var includeMacros:Null<Bool>;
 	public var metadata:Null<Array<String>>;
+
 	/** The symbols of `:refer`, unless `referAll`. **/
 	public var refer:Null<Array<Symbol>>;
+
 	/** `:refer :all` **/
 	public var referAll = false;
+
 	public var referMacros:Null<Array<String>>;
 	public var rename:Null<Array<Rename>>;
+
 	/** The symbol is a string, as in `["react" :as react]`. **/
 	public var symbolIsString = false;
 
@@ -69,6 +77,7 @@ class Require {
 class Import {
 	/** The package; empty for classes in the default package. **/
 	public final packageName:String;
+
 	public final classes:Array<String>;
 	public var commentAfter:Null<String>;
 	public var commentsAbove:Null<Array<String>>;
@@ -177,14 +186,18 @@ class NsGenClass {
 	public var implNs:Null<GenClassKey<String>>;
 	public var implementsInterfaces:Null<GenClassKey<Array<Symbol>>>;
 	public var init:Null<GenClassKey<String>>;
+
 	/** `:gen-class` has no keys. **/
 	public var isEmpty = true;
+
 	public var loadImplNs:Null<GenClassKey<Bool>>;
 	public var main:Null<GenClassKey<Bool>>;
 	public var methods:Null<GenClassKey<Array<Method>>>;
 	public var name:Null<GenClassKey<String>>;
+
 	/** Unknown forms, in source order. **/
 	public var other:Null<Array<GenClassOther>>;
+
 	public var platform:Null<String>;
 	public var postInit:Null<GenClassKey<String>>;
 	public var prefix:Null<GenClassKey<String>>;

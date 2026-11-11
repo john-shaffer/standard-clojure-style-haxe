@@ -54,7 +54,9 @@ class CliTests {
 	}
 
 	static function show(v:Dynamic):String {
-		return Std.isOfType(v, String) ? haxe.Json.stringify(v) : Std.isOfType(v, Array) ? "[" + (v : Array<Dynamic>).map(show).join(", ") + "]" : Std.string(v);
+		return Std.isOfType(v, String) ? haxe.Json.stringify(v) : Std.isOfType(v, Array) ? "["
+			+ (v : Array<Dynamic>).map(show).join(", ")
+			+ "]" : Std.string(v);
 	}
 
 	static function describe(c:Classification):String {
@@ -184,8 +186,19 @@ class CliTests {
 
 		final noFiles = [];
 		test("buildCheckSummary all formatted", () -> {
-			final r = CliUtil.buildCheckSummary({filesThatDidNotRequireFormatting: ["a", "b", "c"], filesThatDidRequireFormatting: noFiles, filesWithErrors: noFiles});
-			eq([r.total, r.numAlreadyFormatted, r.numNeedFormatting, r.numErrors, r.allFormatted, r.exitCode], [3, 3, 0, 0, true, 0]);
+			final r = CliUtil.buildCheckSummary({
+				filesThatDidNotRequireFormatting: ["a", "b", "c"],
+				filesThatDidRequireFormatting: noFiles,
+				filesWithErrors: noFiles
+			});
+			eq([
+				r.total,
+				r.numAlreadyFormatted,
+				r.numNeedFormatting,
+				r.numErrors,
+				r.allFormatted,
+				r.exitCode
+			], [3, 3, 0, 0, true, 0]);
 		});
 		test("buildCheckSummary some need formatting", () -> {
 			final r = CliUtil.buildCheckSummary({filesThatDidNotRequireFormatting: ["a"], filesThatDidRequireFormatting: ["b", "c"], filesWithErrors: noFiles});
@@ -231,7 +244,13 @@ class CliTests {
 				}
 			}
 			final s = CliUtil.buildCheckSummary(check);
-			eq([s.numAlreadyFormatted, s.numNeedFormatting, s.numErrors, s.allFormatted, s.exitCode], [1, 1, 1, false, 1]);
+			eq([
+				s.numAlreadyFormatted,
+				s.numNeedFormatting,
+				s.numErrors,
+				s.allFormatted,
+				s.exitCode
+			], [1, 1, 1, false, 1]);
 		});
 	}
 
@@ -300,7 +319,24 @@ class CliTests {
 
 	static function argParserTests() {
 		test("argparser positional, options and aliases", () -> {
-			final a = ArgParser.parse(["check", "src/", "-in", "x", "--include=y", "-ig", "z", "-l", "quiet", "-c", "c.edn", "--file-ext", "clj", "--output", "json", "-"]);
+			final a = ArgParser.parse([
+				"check",
+				"src/",
+				"-in",
+				"x",
+				"--include=y",
+				"-ig",
+				"z",
+				"-l",
+				"quiet",
+				"-c",
+				"c.edn",
+				"--file-ext",
+				"clj",
+				"--output",
+				"json",
+				"-"
+			]);
 			eq(a.positional, ["check", "src/", "-"]);
 			eq(a.include, ["x", "y"]);
 			eq(a.ignore, ["z"]);
@@ -383,7 +419,8 @@ class CliTests {
 	static function runList(args:Array<String>, ?config:String, ?warnings:Array<String>):Array<String> {
 		final argv = ArgParser.parse(args);
 		if (config != null)
-			CliUtil.mergeConfigIntoArgv(argv, Config.parse(config.charAt(0) == "{" && config.indexOf('"') == 1 ? "c.json" : "c.edn", config));
+			CliUtil.mergeConfigIntoArgv(argv, Config.parse(config.charAt(0) == "{"
+				&& config.indexOf('"') == 1 ? "c.json" : "c.edn", config));
 		final files = FileDiscovery.discoverFromArgv(projectDir, argv, (kind, name) -> if (warnings != null) warnings.push(kind + ":" + name));
 		files.sort(cmp);
 		return files;
@@ -394,23 +431,62 @@ class CliTests {
 	}
 
 	static final allSrc = [
-		"src/browser.cljs", "src/core.clj", "src/data.edn", "src/experimental.jank", "src/generated/generated.clj", "src/generated/generated.cljs",
-		"src/nested/deep.clj", "src/nested/deep.cljs", "src/nested/deep.cljc", "src/shared.cljc",
+		"src/browser.cljs",
+		"src/core.clj",
+		"src/data.edn",
+		"src/experimental.jank",
+		"src/generated/generated.clj",
+		"src/generated/generated.cljs",
+		"src/nested/deep.clj",
+		"src/nested/deep.cljs",
+		"src/nested/deep.cljc",
+		"src/shared.cljc",
 	];
 	static final srcNested = ["src/nested/deep.clj", "src/nested/deep.cljs", "src/nested/deep.cljc"];
 	static final srcCljFamily = [
-		"src/browser.cljs", "src/core.clj", "src/generated/generated.clj", "src/generated/generated.cljs", "src/nested/deep.clj", "src/nested/deep.cljs",
-		"src/nested/deep.cljc", "src/shared.cljc",
-	];
-	static final srcNoGenerated = [
-		"src/browser.cljs", "src/core.clj", "src/data.edn", "src/experimental.jank", "src/nested/deep.clj", "src/nested/deep.cljs", "src/nested/deep.cljc",
+		"src/browser.cljs",
+		"src/core.clj",
+		"src/generated/generated.clj",
+		"src/generated/generated.cljs",
+		"src/nested/deep.clj",
+		"src/nested/deep.cljs",
+		"src/nested/deep.cljc",
 		"src/shared.cljc",
 	];
-	static final srcTopLevel = ["src/browser.cljs", "src/core.clj", "src/data.edn", "src/experimental.jank", "src/shared.cljc"];
+	static final srcNoGenerated = [
+		"src/browser.cljs",
+		"src/core.clj",
+		"src/data.edn",
+		"src/experimental.jank",
+		"src/nested/deep.clj",
+		"src/nested/deep.cljs",
+		"src/nested/deep.cljc",
+		"src/shared.cljc",
+	];
+	static final srcTopLevel = [
+		"src/browser.cljs",
+		"src/core.clj",
+		"src/data.edn",
+		"src/experimental.jank",
+		"src/shared.cljc"
+	];
 	static final srcClj = ["src/core.clj", "src/generated/generated.clj", "src/nested/deep.clj"];
-	static final srcCljCljcShared = ["src/core.clj", "src/generated/generated.clj", "src/nested/deep.clj", "src/nested/deep.cljc", "src/shared.cljc"];
+	static final srcCljCljcShared = [
+		"src/core.clj",
+		"src/generated/generated.clj",
+		"src/nested/deep.clj",
+		"src/nested/deep.cljc",
+		"src/shared.cljc"
+	];
 	static final testFiles = ["test/core_test.clj", "test/nested/browser_test.cljs"];
-	static final srcCljNoGenerated = ["src/browser.cljs", "src/core.clj", "src/nested/deep.clj", "src/nested/deep.cljs", "src/nested/deep.cljc", "src/shared.cljc"];
+	static final srcCljNoGenerated = [
+		"src/browser.cljs",
+		"src/core.clj",
+		"src/nested/deep.clj",
+		"src/nested/deep.cljs",
+		"src/nested/deep.cljc",
+		"src/shared.cljc"
+	];
 
 	static function fileDiscoveryTests() {
 		createTestProject();
@@ -420,7 +496,12 @@ class CliTests {
 		discoveryCase("allows a directly named file with a non-default extension", ["src/notes.txt"], ["src/notes.txt"]);
 		discoveryCase("recursively discovers supported files in a directory", ["src"], allSrc);
 		discoveryCase("uses --file-ext when discovering files from a directory", ["src", "--file-ext", "clj,cljs"], [
-			"src/browser.cljs", "src/core.clj", "src/generated/generated.clj", "src/generated/generated.cljs", "src/nested/deep.clj", "src/nested/deep.cljs",
+			"src/browser.cljs",
+			"src/core.clj",
+			"src/generated/generated.clj",
+			"src/generated/generated.cljs",
+			"src/nested/deep.clj",
+			"src/nested/deep.cljs",
 		]);
 
 		// --include files and directories
@@ -431,14 +512,14 @@ class CliTests {
 		discoveryCase("--include a nested literal directory", ["--include", "src/nested"], srcNested);
 		test("--include an absolute literal directory", () -> eq(runList(["--include", projectDir + "/src/nested"]), absoluteFiles(srcNested)));
 		discoveryCase("--include combines literal directories", ["--include", "dev", "--include", "test"], ["dev/user.clj"].concat(testFiles));
-		discoveryCase("--include combines a directory with a glob", ["--include", "dev", "--include", "src/**/*.cljc"], [
-			"dev/user.clj", "src/nested/deep.cljc", "src/shared.cljc",
-		]);
+		discoveryCase("--include combines a directory with a glob", ["--include", "dev", "--include", "src/**/*.cljc"],
+			["dev/user.clj", "src/nested/deep.cljc", "src/shared.cljc",]);
 		discoveryCase("--include deduplicates a directory and an overlapping glob", ["--include", "src", "--include", "src/**/*.clj"], allSrc);
 		discoveryCase("--include a directory uses --file-ext", ["--include", "src", "--file-ext", "clj,cljc"], srcCljCljcShared);
 		discoveryCase("literal directory ignore applies to an include directory", ["--include", "src", "--ignore", "src/generated"], srcNoGenerated);
 		discoveryCase("ignore globs apply to an include directory", ["--include", "src", "--ignore", "src/{generated,nested}/**/*"], srcTopLevel);
-		discoveryCase("--include . searches the current directory", ["--include", "."], ["dev/user.clj", "resources/config.edn"].concat(allSrc).concat(testFiles));
+		discoveryCase("--include . searches the current directory", ["--include", "."],
+			["dev/user.clj", "resources/config.edn"].concat(allSrc).concat(testFiles));
 		test("--include an empty directory", () -> {
 			mkdirs(projectDir + "/empty");
 			eq(runList(["--include", "empty"]), []);
@@ -457,14 +538,23 @@ class CliTests {
 		discoveryCase("a pattern that matches nothing yields nothing", ["--include", "does-not-exist/**/*.clj"], []);
 
 		// --ignore patterns
-		discoveryCase("ignores a relative filename", ["--include", "src/**/*.clj", "--ignore", "src/nested/deep.clj"], ["src/core.clj", "src/generated/generated.clj"]);
+		discoveryCase("ignores a relative filename", ["--include", "src/**/*.clj", "--ignore", "src/nested/deep.clj"],
+			["src/core.clj", "src/generated/generated.clj"]);
 		discoveryCase("ignores everything beneath a directory", ["--include", "src/**/*.{clj,cljs,cljc}", "--ignore", "src/generated"], srcCljNoGenerated);
 		discoveryCase("recursive ignore globs", ["--include", "src/**/*.{clj,cljs,cljc}", "--ignore", "src/generated/**/*"], srcCljNoGenerated);
 		discoveryCase("brace expansion in ignore patterns", [
-			"--include", "src/**/*.{clj,cljs,cljc}", "--ignore", "src/{generated,nested}/**/*.{clj,cljs,cljc}",
+			"--include",
+			"src/**/*.{clj,cljs,cljc}",
+			"--ignore",
+			"src/{generated,nested}/**/*.{clj,cljs,cljc}",
 		], ["src/browser.cljs", "src/core.clj", "src/shared.cljc"]);
 		discoveryCase("multiple ignore patterns", [
-			"--include", "src/**/*.clj", "--ignore", "src/generated/**/*.clj", "--ignore", "src/nested/**/*.clj",
+			"--include",
+			"src/**/*.clj",
+			"--ignore",
+			"src/generated/**/*.clj",
+			"--ignore",
+			"src/nested/**/*.clj",
 		], ["src/core.clj"]);
 		discoveryCase("ignores apply to a directory argument", ["src", "--ignore", "src/{generated,nested}/**/*"], srcTopLevel);
 
@@ -474,12 +564,17 @@ class CliTests {
 		discoveryCase("config: multiple literal include directories", [], ["dev/user.clj"].concat(testFiles), '{"include": ["dev", "test"]}');
 		discoveryCase("config: ignore applies to a configured directory", [], srcTopLevel, '{"include": ["src"], "ignore": ["src/{generated,nested}/**/*"]}');
 		discoveryCase("config: command-line directory replaces configured include", ["--include", "src/nested"], srcNested, '{"include": ["test/**/*.clj"]}');
-		discoveryCase("config: include and ignore from JSON", [], srcCljNoGenerated, '{"include": ["src/**/*.{clj,cljs,cljc}"], "ignore": ["src/generated/**/*"]}');
-		discoveryCase("config: include and ignore from EDN", [], srcCljNoGenerated, '{:include ["src/**/*.{clj,cljs,cljc}"]\n :ignore ["src/generated/**/*"]}\n');
-		discoveryCase("config: command-line include replaces configured include", ["--include", "src/*.clj"], ["src/core.clj"], '{"include": ["test/**/*.clj"]}');
+		discoveryCase("config: include and ignore from JSON", [], srcCljNoGenerated,
+			'{"include": ["src/**/*.{clj,cljs,cljc}"], "ignore": ["src/generated/**/*"]}');
+		discoveryCase("config: include and ignore from EDN", [], srcCljNoGenerated,
+			'{:include ["src/**/*.{clj,cljs,cljc}"]\n :ignore ["src/generated/**/*"]}\n');
+		discoveryCase("config: command-line include replaces configured include", ["--include", "src/*.clj"], ["src/core.clj"],
+			'{"include": ["test/**/*.clj"]}');
 		discoveryCase("config: direct arguments replace configured include", ["dev/user.clj"], ["dev/user.clj"], '{"include": ["test/**/*.clj"]}');
-		discoveryCase("config: configured ignore still applies with command-line include", ["--include", "src/**/*.clj"], ["src/core.clj", "src/nested/deep.clj"], '{"include": ["test/**/*.clj"], "ignore": ["src/generated/**/*"]}');
-		discoveryCase("config: command-line ignore replaces configured ignore", ["--ignore", "src/nested/**/*"], ["src/core.clj", "src/generated/generated.clj"], '{"include": ["src/**/*.clj"], "ignore": ["src/generated/**/*"]}');
+		discoveryCase("config: configured ignore still applies with command-line include", ["--include", "src/**/*.clj"],
+			["src/core.clj", "src/nested/deep.clj"], '{"include": ["test/**/*.clj"], "ignore": ["src/generated/**/*"]}');
+		discoveryCase("config: command-line ignore replaces configured ignore", ["--ignore", "src/nested/**/*"],
+			["src/core.clj", "src/generated/generated.clj"], '{"include": ["src/**/*.clj"], "ignore": ["src/generated/**/*"]}');
 
 		// warnings for missing paths
 		test("warns when a direct argument does not exist", () -> {

@@ -6,8 +6,10 @@ typedef DiscoverOptions = {
 	final fileExtensions:Array<String>;
 	final ignorePatterns:Array<String>;
 	final includePatterns:Array<String>;
+
 	/** Called with `"include"` or `"ignore"` and the path that was not found. **/
 	final ?onMissingPath:(kind:String, filename:String) -> Void;
+
 	final rootDir:String;
 }
 

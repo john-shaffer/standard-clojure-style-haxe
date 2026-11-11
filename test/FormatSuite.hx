@@ -58,7 +58,10 @@ class FormatSuite {
 	public static function extraChecks(roots:Array<String>):Array<String> {
 		final errors:Array<String> = [];
 
-		final duplicates = [for (name => files in filesByName) if (files.length > 1) '$name (x${files.length}: ${files.join(", ")})'];
+		final duplicates = [
+			for (name => files in filesByName)
+				if (files.length > 1) '$name (x${files.length}: ${files.join(", ")})'
+		];
 		if (duplicates.length > 0)
 			errors.push('test_format cases should have unique names: $duplicates');
 
@@ -80,9 +83,11 @@ class FormatSuite {
 		}
 
 		// a :gen-class key with no recognizable value must be an error, never the text "undefined"
-		for (key in ["(ns foo (:gen-class :name))" => ":gen-class :name is missing a value.",
+		for (key in [
+			"(ns foo (:gen-class :name))" => ":gen-class :name is missing a value.",
 			"(ns foo (:gen-class :prefix))" => ":gen-class :prefix is missing a value.",
-			"(ns foo (:gen-class :name foo.Bar :init))" => ":gen-class :init is missing a value."].keyValueIterator()) {
+			"(ns foo (:gen-class :name foo.Bar :init))" => ":gen-class :init is missing a value."
+		].keyValueIterator()) {
 			switch Standard.format(key.key) {
 				case Failure(reason):
 					if (reason != key.value)

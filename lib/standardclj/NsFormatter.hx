@@ -203,7 +203,7 @@ class NsFormatter {
 			s += formatKeywordFollowedByListOfSymbols(kwd, symbolNames(symbolsArr));
 			return s + "))";
 		}
-		// all symbols are for specific platforms across multiple platforms:
+			// all symbols are for specific platforms across multiple platforms:
 		// wrap a separate (:refer-clojure) per platform inside #?(...)
 		else if (numPlatforms > 1 && numSymbolsForAllPlatforms == 0) {
 			var s = printCommentsAbove("\n", commentsAbove, "  ");
@@ -416,7 +416,7 @@ class NsFormatter {
 			s += formatReferClojureKeysOnOneLine(rc, platforms[0]);
 			return s + "))";
 		}
-		// every item is for a specific platform, across multiple platforms:
+			// every item is for a specific platform, across multiple platforms:
 		// wrap a separate (:refer-clojure) per platform inside #?(...)
 		else if (numPlatforms > 1 && numItmsForAllPlatforms == 0) {
 			var s = printCommentsAbove("\n", commentsAbove, "  ");
@@ -435,7 +435,7 @@ class NsFormatter {
 			}
 			return s + ")";
 		}
-		// a mix of items for all platforms and some for specific platforms:
+			// a mix of items for all platforms and some for specific platforms:
 		// put each key on its own line and splice the platform-specific items into each key's collection
 		else {
 			var s = printCommentsAbove("\n", commentsAbove, "  ");
@@ -1083,8 +1083,10 @@ class NsFormatter {
 private class NsOutput {
 	/** A section printed the parens that close the ns form. **/
 	public var closesNs = false;
+
 	/** A comment after the last form, printed after the ns form closes. **/
 	public var commentOutside:Null<String>;
+
 	public var text:String;
 
 	public function new(text:String) {

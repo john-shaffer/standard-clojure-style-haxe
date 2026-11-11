@@ -45,8 +45,7 @@ class Parser {
 				true;
 			case 0x2028 | 0x2029 | 0x1680 | 0x205F | 0x3000:
 				true;
-			default:
-				c >= 0x2000 && c <= 0x200A && c != 0x2007;
+			default: c >= 0x2000 && c <= 0x200A && c != 0x2007;
 		}
 	}
 
@@ -126,7 +125,6 @@ class Parser {
 
 	// -------------------------------------------------------------------------
 	// Compound forms
-
 	// wraps a form in a named node, like `.body` or `.meta`
 	static function named(name:String, form:Node):Node {
 		return new Node(name, form.startIdx, form.endIdx, null, [form]);

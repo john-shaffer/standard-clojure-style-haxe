@@ -8,10 +8,13 @@ import standardclj.Standard.FormatResult;
 /** What the formatter tracks about a collection while it is on the paren stack. **/
 private class ParenInfo {
 	public final opener:Node;
+
 	/** Is the first form of the collection itself a collection? **/
 	public final headIsOpener:Bool;
+
 	/** Nodes printed on the opening line of this paren stack, used to determine if Rule 3 indentation applies. **/
 	public final openingLineNodes:Array<Node> = [];
+
 	public final openerLineIdx:Int;
 	public var rule3Active = false;
 	public var rule3NumSpaces = 0;
@@ -39,6 +42,7 @@ private class Frame {
 private enum IgnoreKind {
 	/** `#_ :standard-clj/ignore` **/
 	Keyword;
+
 	/** `#_{:standard-clj/ignore true}` **/
 	Map;
 }
@@ -270,7 +274,7 @@ class NodesFormatter {
 		if (wrapping == null)
 			return 0;
 		final opener = wrapping.opener;
-				final openerColIdx = opener.printedColIdx;
+		final openerColIdx = opener.printedColIdx;
 		if (isReaderConditionalOpener(opener))
 			return openerColIdx + opener.text.length;
 		if (wrapping.headIsOpener) {
@@ -290,14 +294,17 @@ class NodesFormatter {
 		return openerColIdx + 2;
 	}
 
-
 	/** What `#_` discards, if it asks for the next form to be left alone. **/
 	static function ignoreKind(discard:Node):Null<IgnoreKind> {
 		final form = bodyForm(discard);
 		final gaps = discard.children.length - 2;
 		if (isStandardCljIgnoreKeyword(form) && (gaps == 0 || (gaps == 1 && isWhitespace(discard.children[1]))))
 			return Keyword;
-		if (form != null && form.name == "braces" && gaps == 0 && isOpen(form.children[0], "{") && isStandardCljIgnoreKeyword(itemsOf(form)[1]))
+		if (form != null
+			&& form.name == "braces"
+			&& gaps == 0
+			&& isOpen(form.children[0], "{")
+			&& isStandardCljIgnoreKeyword(itemsOf(form)[1]))
 			return Map;
 		return null;
 	}
@@ -518,7 +525,9 @@ class NodesFormatter {
 							if (openingLineNode != null) {
 								// Is the first node on this new line vertically aligned with any of the nodes
 								// on the line above that are in the same paren stack?
-								if (pastFirstWhitespaceNode && hasNonBlankText(openingLineNode) && openingLineNode.origColIdx == numSpacesOnNextLine) {
+								if (pastFirstWhitespaceNode
+									&& hasNonBlankText(openingLineNode)
+									&& openingLineNode.origColIdx == numSpacesOnNextLine) {
 									// Rule 3 is activated
 									topOfTheParenStack.rule3Active = true;
 
@@ -615,7 +624,9 @@ class NodesFormatter {
 
 		if (node.hasText() && !skipPrintingThisNode) {
 			final isTokenFollowedByOpener = isToken(node) && nextTextNode != null && isParenOpener(nextTextNode);
-			final isParenCloserFollowedByText = isParenCloser(node) && nextTextNode != null && (isToken(nextTextNode) || isParenOpener(nextTextNode));
+			final isParenCloserFollowedByText = isParenCloser(node)
+				&& nextTextNode != null
+				&& (isToken(nextTextNode) || isParenOpener(nextTextNode));
 			final addSpaceAfterThisNode = isTokenFollowedByOpener || isParenCloserFollowedByText;
 
 			var nodeTxt = node.text;

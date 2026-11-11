@@ -221,7 +221,13 @@ https://github.com/oakmac/standard-clojure-style-js";
 		switch (classification) {
 			case Error(message):
 				r.filesWithErrors.push(filename);
-				printToStderr(Color.red("E") + " " + Color.bold(Color.red(CliUtil.relativeFilename(filename, rootDir))) + " - " + message + " " + formatDuration(seconds));
+				printToStderr(Color.red("E")
+					+ " "
+					+ Color.bold(Color.red(CliUtil.relativeFilename(filename, rootDir)))
+					+ " - "
+					+ message
+					+ " "
+					+ formatDuration(seconds));
 				atLeastOneFilePrinted = true;
 			case Formatted(outputText):
 				File.saveContent(filename, outputText);

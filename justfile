@@ -34,4 +34,4 @@ test:
 
 # Re-sync tests/upstream from the source repository
 sync-tests *args:
-    scripts/sync-tests.sh {{args}}
+    scripts/sync-tests.sh {{ args }}

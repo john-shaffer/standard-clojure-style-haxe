@@ -5,7 +5,7 @@
     # Latest stable nixpkgs
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
 
-        sand = {
+    sand = {
       inputs.nixpkgs.follows = "nixpkgs";
       url = "github:john-shaffer/sand";
     };

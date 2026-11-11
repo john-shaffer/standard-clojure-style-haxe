@@ -29,8 +29,12 @@ class FormatUtil {
 
 	/** Does the line need a space inserted before a comment that is about to be printed on it? **/
 	public static function commentNeedsSpaceBefore(lineTxt:String, nodeTxt:String):Bool {
-		return StringTools.startsWith(nodeTxt, ";") && lineTxt != "" && !StringTools.endsWith(lineTxt, " ") && !StringTools.endsWith(lineTxt, "(")
-			&& !StringTools.endsWith(lineTxt, "[") && !StringTools.endsWith(lineTxt, "{");
+		return StringTools.startsWith(nodeTxt, ";")
+			&& lineTxt != ""
+			&& !StringTools.endsWith(lineTxt, " ")
+			&& !StringTools.endsWith(lineTxt, "(")
+			&& !StringTools.endsWith(lineTxt, "[")
+			&& !StringTools.endsWith(lineTxt, "{");
 	}
 
 	public static function commentNeedsSpaceInside(commentTxt:String):Bool {

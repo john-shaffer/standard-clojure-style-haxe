@@ -29,7 +29,6 @@ class NodeSearch {
 				out.push(child.text);
 			else if (isReaderComment(child))
 				out.push(textOf(child));
-
 		}
 		return out;
 	}
