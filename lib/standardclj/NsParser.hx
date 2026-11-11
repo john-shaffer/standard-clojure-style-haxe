@@ -872,7 +872,7 @@ class NsParser {
 				addOther(genClass, key, value.node, above);
 			} else if (value == null) {
 				return;
-			} else if (entry.value != null) {
+			} else if (entry.hasValue()) {
 				// a comment after the value belongs to the key
 				final end = line(lastDescendant(value.node));
 				target = {from: end, to: end, set: c -> entry.commentAfter = c};
@@ -884,7 +884,7 @@ class NsParser {
 		Stores the key and its value in `genClass`. Returns the key, or null when
 		the value is not a kind that the key takes.
 	**/
-	function genClassKey(genClass:NsGenClass, name:String, above:Null<Array<String>>, value:Null<Slot>):Null<GenClassKey<Dynamic>> {
+	function genClassKey(genClass:NsGenClass, name:String, above:Null<Array<String>>, value:Null<Slot>):Null<GenClassKeyBase> {
 		switch name {
 			case "constructors":
 				return genClass.constructors = keyOf(above, value, (v, _) -> isMapLiteral(v.node) ? GenClass.parseConstructors(v.node) : null);

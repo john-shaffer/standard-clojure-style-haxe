@@ -88,15 +88,27 @@ class ReferClojure {
 	public function new() {}
 }
 
-/** The comments, metadata and value that belong to one key of `:gen-class`. **/
-class GenClassKey<T> {
+/** What every key of `:gen-class` has, whatever the type of its value. **/
+class GenClassKeyBase {
 	public var commentAfter:Null<String>;
 	public var commentsAbove:Null<Array<String>>;
 	public var metadata:Null<String>;
+
+	public function new() {}
+
+	public function hasValue():Bool {
+		return false;
+	}
+}
+
+/** The comments, metadata and value that belong to one key of `:gen-class`. **/
+class GenClassKey<T> extends GenClassKeyBase {
 	/** Null when the key is missing its value. **/
 	public var value:Null<T>;
 
-	public function new() {}
+	override public function hasValue():Bool {
+		return value != null;
+	}
 }
 
 class Constructor {
