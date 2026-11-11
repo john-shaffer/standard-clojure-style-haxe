@@ -1,6 +1,7 @@
 .*
 !.envrc
 !.gitignore
+!.standard-clj.edn
 
 result
 standard-clj.n
